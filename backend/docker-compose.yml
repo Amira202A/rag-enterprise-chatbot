@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   qdrant:
     image: qdrant/qdrant:latest
     container_name: qdrant_container
@@ -11,6 +10,24 @@ services:
       - qdrant_data:/qdrant/storage
     restart: always
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+
+  mongo:
+    image: mongo:6
+    container_name: mongo_container
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   backend:
     build: .
     container_name: rag_backend
@@ -18,11 +35,16 @@ services:
       - "8000:8000"
     depends_on:
       - qdrant
+      - ollama
+      - mongo
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
-      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_URL=http://ollama:11434
+      - MONGO_URL=mongodb://mongo:27017
     restart: always
 
 volumes:
   qdrant_data:
+  ollama_data:
+  mongo_data:

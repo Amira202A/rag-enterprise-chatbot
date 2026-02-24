@@ -1,0 +1,109 @@
+<div class="app-container">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">PGH</div>
+        <div class="logo-text">
+          <span class="brand">PGH</span>
+          <span class="product">SmartBot</span>
+        </div>
+      </div>
+
+      <button class="new-chat-btn" (click)="createNewConversation()">
+        + Nouvelle conversation
+      </button>
+    </div>
+
+    <div class="history">
+      <h4>Historique</h4>
+
+      <div 
+        *ngFor="let conv of conversations"
+        (click)="selectConversation(conv.id)"
+        [class.active]="conv.id === activeConversationId"
+        class="history-item"
+      >
+        <div class="history-title">{{ conv.title }}</div>
+      </div>
+
+    </div>
+
+  </aside>
+
+  <!-- MAIN CHAT -->
+  <main class="chat-area">
+
+    <!-- HEADER -->
+    <div class="chat-header">
+      <div class="chat-title">
+        <h3>{{ currentConversation?.title || 'Nouvelle conversation' }}</h3>
+        <span class="status">
+          <span class="status-dot"></span>
+          En ligne
+        </span>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="chat-messages" #scrollContainer>
+
+      <div 
+        *ngFor="let msg of currentConversation?.messages"
+        [ngClass]="msg.role === 'user' ? 'message user' : 'message bot'"
+      >
+
+        <div class="avatar" *ngIf="msg.role === 'bot'">
+          PGH
+        </div>
+
+        <div class="bubble">
+          <div class="message-content">
+            {{ msg.content }}
+          </div>
+          <div class="timestamp">
+            {{ msg.timestamp }}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Typing Indicator -->
+      <div *ngIf="isTyping" class="typing-container">
+        <div class="avatar">PGH</div>
+        <div class="typing-bubble">
+          <div class="typing-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="typing-text">PGH SmartBot écrit...</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- INPUT -->
+    <div class="chat-input">
+
+      <input
+        type="text"
+        [(ngModel)]="userMessage"
+        placeholder="Posez votre question..."
+        (keyup.enter)="sendMessage()"
+      />
+
+      <button 
+        (click)="sendMessage()" 
+        [disabled]="!userMessage.trim() || isTyping"
+      >
+        Envoyer
+      </button>
+
+    </div>
+
+  </main>
+
+</div>

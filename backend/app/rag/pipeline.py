@@ -64,7 +64,7 @@ def run_pipeline(question: str):
     # ✅ Gestion salutations
     if is_greeting(question):
 
-        if question.lower().startswith(("hello", "hi", "hey", "good")):
+        if question.lower().startswith(("hello", "hi", "hey", "good","yoo","morning","good morning")):
             answer = "Hello 👋 I'm your enterprise AI assistant. How can I help you today?"
         else:
             answer = "Bonjour 👋 Je suis votre assistant IA entreprise. Comment puis-je vous aider aujourd’hui ?"

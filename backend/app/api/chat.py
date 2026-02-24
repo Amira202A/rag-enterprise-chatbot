@@ -1,8 +1,13 @@
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
+from datetime import datetime
+
 from app.services.embedding_service import generate_embedding
 from app.services.document_service import add_document, search_documents
 from app.rag.pipeline import run_pipeline
+
+# 🔥 Import Mongo
+from database.mongo import collection
 
 router = APIRouter()
 
@@ -33,5 +38,19 @@ def search(query: str = Body(...)):
 
 
 @router.post("/chat")
-def chat(request: ChatRequest):
-    return run_pipeline(request.question)
+async def chat(request: ChatRequest):
+
+    # 🔹 Exécute ton pipeline RAG
+    result = run_pipeline(request.question)
+
+    # Selon ton pipeline, adapte si besoin
+    answer = result.get("response") if isinstance(result, dict) else result
+
+    # 🔥 Sauvegarde MongoDB
+    collection.insert_one({
+        "question": request.question,
+        "answer": answer,
+        "timestamp": datetime.utcnow()
+    })
+
+    return {"response": answer}

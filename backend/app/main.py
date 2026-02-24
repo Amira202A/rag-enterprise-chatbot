@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.services.document_service import create_collection
 from app.api.chat import router as chat_router
 
@@ -9,6 +11,14 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# ✅ Ajout du CORS pour Angular
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],  # frontend Angular
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # 🔹 Création automatique de la collection au démarrage
 @app.on_event("startup")
@@ -18,11 +28,11 @@ def startup_event():
     print("✅ Backend prêt.")
 
 
-# 🔹 Inclusion des routes API
+
 app.include_router(chat_router)
 
 
-# 🔹 Route racine (test rapide)
+
 @app.get("/")
 def root():
     return {

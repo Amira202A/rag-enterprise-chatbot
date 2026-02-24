@@ -9,7 +9,7 @@ client = QdrantClient(
 )
 
 
-def retrieve_documents(question: str, top_k: int = 1):
+def retrieve_documents(question: str, top_k: int = 3):
 
     query_vector = generate_embedding(question)
 

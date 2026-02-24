@@ -1,0 +1,60 @@
+/* ===============================
+   PGH SmartBot - Design System
+================================= */
+
+/* Variables globales */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+
+  --color-bg-dark: #0f172a;
+  --color-sidebar: #111827;
+  --color-border-dark: #1f2937;
+
+  --color-bg-light: #f8fafc;
+  --color-border-light: #e2e8f0;
+
+  --color-text-light: #e2e8f0;
+  --color-text-dark: #1e293b;
+  --color-text-muted: #94a3b8;
+
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Reset propre */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body global */
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-light);
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Scrollbar moderne */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
