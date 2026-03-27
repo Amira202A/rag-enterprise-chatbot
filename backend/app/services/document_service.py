@@ -33,24 +33,20 @@ def create_collection():
         print("ℹ️ Collection déjà existante")
 
 
-def add_document(text: str):
-    """
-    Ajoute un document dans Qdrant avec son embedding
-    """
+def add_document(text: str, metadata: dict = None):
 
-    # 1️⃣ Générer l'embedding
     embedding = generate_embedding(text)
 
-    # 2️⃣ Créer le point pour Qdrant
     point = PointStruct(
         id=str(uuid.uuid4()),
         vector=embedding,
         payload={
-            "text": text
+            "text": text,
+            "source": metadata.get("source") if metadata else None,
+            "page": metadata.get("page") if metadata else None
         }
     )
 
-    # 3️⃣ Insérer dans la collection
     client.upsert(
         collection_name=COLLECTION_NAME,
         points=[point]

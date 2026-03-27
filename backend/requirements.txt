@@ -6,3 +6,7 @@ pydantic
 python-multipart
 pypdf
 pymongo
+sqlalchemy
+pymysql
+email-validator
+cryptography

@@ -1,8 +1,9 @@
 from app.rag.retriever import retrieve_documents
 from app.services.llm_service import generate_answer
+import time
 
 
-# 🔹 1️⃣ Détection intelligente des salutations
+# 🔹 Détection des salutations
 def is_greeting(text: str) -> bool:
     greetings = [
         "bonjour", "salut", "hello", "hi",
@@ -11,40 +12,49 @@ def is_greeting(text: str) -> bool:
     ]
 
     text_clean = text.strip().lower()
-
     return any(text_clean.startswith(g) for g in greetings)
 
 
-# 🔹 2️⃣ Détection simple de langue
-def detect_language(text: str):
-    text = text.lower()
-    english_words = ["the", "who", "what", "how", "is", "are", "why"]
-    if any(word in text for word in english_words):
-        return "en"
-    return "fr"
+# 🔥 FILTRAGE INTELLIGENT
+def filter_relevant_docs(documents, question):
+    question_words = question.lower().split()
+
+    filtered = []
+
+    for doc in documents:
+        text = doc["text"].lower() if isinstance(doc, dict) else doc.lower()
+
+        # score = nombre de mots en commun
+        score = sum(word in text for word in question_words)
+
+        if score >= 2:
+            filtered.append((score, doc))
+
+    # trier par score (plus pertinent en premier)
+    filtered.sort(key=lambda x: x[0], reverse=True)
+
+    # fallback
+    if not filtered:
+        return documents
+
+    return [doc for _, doc in filtered]
 
 
-# 🔹 3️⃣ Construction du prompt
+# 🔹 Construction du prompt
 def build_prompt(context_chunks, question):
+
     context = "\n\n".join(context_chunks)
 
     return f"""
-You are a smart and professional enterprise assistant.
+You are a strict enterprise AI assistant.
 
-STRICT RULES:
-1. Detect the language of the user question.
-2. If the question is in French, answer ONLY in French.
-3. If the question is in English, answer ONLY in English.
-4. Never mix languages.
-5. Write one short, clear paragraph (maximum 4 sentences).
-6. Reformulate naturally.
-7. Do not repeat ideas.
-8. Do not create lists.
-9. Do not invent information.
-
-IMPORTANT:
-- Use only the information from the context.
-- If the answer is not found in the context, say you cannot find it.
+IMPORTANT RULES:
+- Answer ONLY using the provided context.
+- If the answer is not explicitly in the context, say EXACTLY:
+  "I don't know based on the provided documents."
+- Do NOT use prior knowledge.
+- Do NOT guess.
+- Keep the answer short (2-3 sentences max).
 
 CONTEXT:
 {context}
@@ -52,19 +62,20 @@ CONTEXT:
 QUESTION:
 {question}
 
-FINAL ANSWER:
+ANSWER:
 """
 
 
-# 🔹 4️⃣ Pipeline principal
+# 🔹 Pipeline principal
 def run_pipeline(question: str):
 
     question = question.strip()
+    total_start = time.time()
 
     # ✅ Gestion salutations
     if is_greeting(question):
 
-        if question.lower().startswith(("hello", "hi", "hey", "good","yoo","morning","good morning")):
+        if question.lower().startswith(("hello", "hi", "hey", "good")):
             answer = "Hello 👋 I'm your enterprise AI assistant. How can I help you today?"
         else:
             answer = "Bonjour 👋 Je suis votre assistant IA entreprise. Comment puis-je vous aider aujourd’hui ?"
@@ -75,45 +86,60 @@ def run_pipeline(question: str):
             "sources": []
         }
 
-    # 🔎 Détection langue
-    lang = detect_language(question)
+    # 🔎 RETRIEVAL
+    start = time.time()
 
-    # 🔎 Recherche documents
-    documents = retrieve_documents(question)
+    try:
+        documents = retrieve_documents(question, top_k=5)
+    except TypeError:
+        documents = retrieve_documents(question)
+
+    print("⏱ Retrieval:", time.time() - start)
+
+    # 🔥 FILTRAGE
+    documents = filter_relevant_docs(documents, question)
+
+    # 📚 DEBUG
+    print("\n===== DOCUMENTS UTILISÉS =====\n")
+
+    for doc in documents:
+        if isinstance(doc, dict):
+            print(doc["text"][:400])
+            print(f"\nSOURCE: {doc.get('source')} | PAGE: {doc.get('page')}")
+        else:
+            print(doc[:400])
+
+        print("\n-----------------\n")
 
     # ❌ Aucun document trouvé
     if not documents:
-
-        if lang == "en":
-            answer = "I cannot find the requested information in the available documents."
-        else:
-            answer = "Je ne trouve pas l'information dans les documents disponibles."
-
         return {
             "question": question,
-            "answer": answer,
+            "answer": "Je ne trouve pas d'information pertinente dans les documents.",
             "sources": []
         }
 
-    # 🧠 Construction prompt
-    prompt = build_prompt(documents, question)
+    # 🧠 Construction du prompt
+    start = time.time()
 
-    # 🤖 Génération réponse principale
+    context_chunks = [
+        doc["text"] if isinstance(doc, dict) else doc
+        for doc in documents
+    ][:3]
+
+    prompt = build_prompt(context_chunks, question)
+
+    print("⏱ Prompt:", time.time() - start)
+
+    # 🤖 LLM
+    start = time.time()
     answer = generate_answer(prompt)
+    print("⏱ LLM:", time.time() - start)
 
-    # 🔁 Reformulation propre en anglais si nécessaire
-    if lang == "en":
-        translation_prompt = f"""
-Rewrite this answer clearly and naturally in English.
-Do not change the meaning.
-
-Answer:
-{answer}
-"""
-        answer = generate_answer(translation_prompt)
+    print("⏱ TOTAL:", time.time() - total_start)
 
     return {
         "question": question,
         "answer": answer,
-        "sources": documents
+        "sources": documents[:3]
     }

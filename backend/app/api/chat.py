@@ -1,24 +1,28 @@
 from fastapi import APIRouter, Body
 from pydantic import BaseModel
 from datetime import datetime
+from bson import ObjectId
+import time
 
 from app.services.embedding_service import generate_embedding
 from app.services.document_service import add_document, search_documents
 from app.rag.pipeline import run_pipeline
+from app.database.mongo import conversations_collection, messages_collection
 
-# 🔥 Import Mongo
-from database.mongo import collection
 
+# ✅ Router
 router = APIRouter()
 
 
+# ✅ Model
 class ChatRequest(BaseModel):
     question: str
+    conversation_id: str
 
 
+# 🔹 TEST EMBEDDING
 @router.get("/test-embedding")
 def test_embedding():
-
     vector = generate_embedding("Bonjour ceci est un test")
 
     return {
@@ -27,30 +31,71 @@ def test_embedding():
     }
 
 
+# 🔹 ADD DOCUMENT
 @router.post("/add-document")
 def insert_document(text: str = Body(...)):
     return add_document(text)
 
 
+# 🔹 SEARCH
 @router.post("/search")
 def search(query: str = Body(...)):
     return search_documents(query)
 
 
+# 🔹 CHAT
 @router.post("/chat")
 async def chat(request: ChatRequest):
 
-    # 🔹 Exécute ton pipeline RAG
+    # 🔥 mesurer temps réel
+    start = time.time()
+
+    # 🔹 pipeline
     result = run_pipeline(request.question)
 
-    # Selon ton pipeline, adapte si besoin
-    answer = result.get("response") if isinstance(result, dict) else result
+    print("\n===== DEBUG RESULT =====")
+    print(result)
 
-    # 🔥 Sauvegarde MongoDB
-    collection.insert_one({
+    # 🔹 temps
+    duration = round(time.time() - start, 2)
+
+    # 🔹 réponse
+    if isinstance(result, dict):
+        answer = result.get("answer", "")
+    else:
+        answer = str(result)
+
+    print("===== DEBUG ANSWER =====")
+    print(answer)
+    print("========================\n")
+
+    conversation_id = ObjectId(request.conversation_id)
+
+    # 🔹 message
+    message = {
         "question": request.question,
         "answer": answer,
-        "timestamp": datetime.utcnow()
-    })
+        "conversationId": conversation_id,
+        "created_at": datetime.utcnow(),
+        "response_time": duration
+    }
 
-    return {"response": answer}
+    inserted = messages_collection.insert_one(message)
+
+    # 🔹 update conversation
+    conversations_collection.update_one(
+        {"_id": conversation_id},
+        {"$push": {"messages": inserted.inserted_id}}
+    )
+
+    # 🔹 update title
+    conversations_collection.update_one(
+        {"_id": conversation_id, "title": "Nouvelle conversation"},
+        {"$set": {"title": request.question[:40]}}
+    )
+
+    # 🔹 response
+    return {
+        "answer": answer,
+        "time": duration
+    }

@@ -7,6 +7,6 @@ COLLECTION_NAME = "enterprise_documents"
 
 EMBEDDING_MODEL = "nomic-embed-text"
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-LLM_MODEL = "qwen:1.8b" 
+LLM_MODEL = "phi3:mini"
 
 VECTOR_SIZE = 768

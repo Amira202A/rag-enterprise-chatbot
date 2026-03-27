@@ -272,6 +272,9 @@
   border-top: 1px solid #e5e7eb;
   display: flex;
   gap: 12px;
+
+  /* ✅ AJOUT */
+  align-items: center;
 }
 
 .chat-input input {
@@ -303,4 +306,74 @@
 .chat-input button:hover {
   background: #1d4ed8;
   transform: translateY(-2px);
+}
+
+/* ✅ MICRO AMÉLIORÉ */
+.mic-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.mic-button:hover {
+  background: #1d4ed8;
+  transform: scale(1.1);
+}
+
+.mic-button.listening {
+  background: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+/* 🔊 bouton voice */
+.voice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: #0ea5e9;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.2s ease;
+  font-size: 16px;
+}
+
+.voice-button:hover {
+  background: #0284c7;
+  transform: scale(1.1);
+}
+
+.voice-button.listening {
+  background: #ef4444;
+}
+
+/* 🎙️ animation */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+/* 🔊 bouton lecture message */
+.play-button {
+  margin-top: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+
+.play-button:hover {
+  opacity: 1;
+  transform: scale(1.2);
 }
