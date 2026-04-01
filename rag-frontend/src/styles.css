@@ -31,7 +31,10 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+.mic-button.listening {
+  background: #ef4444;
+  animation: pulse 1s infinite;
+}
 /* Body global */
 body {
   font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -57,4 +60,54 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+.voice-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Waveform */
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 44px;
+}
+
+.bar {
+  display: block;
+  width: 3px;
+  background: #4f8ef7;
+  border-radius: 2px;
+  transition: height 80ms ease;
+  min-height: 2px;
+}
+
+/* Point rouge clignotant */
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e53935;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+}
+
+/* Bouton micro actif */
+.mic-btn {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.mic-btn.active {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 6px #4f8ef7);
 }

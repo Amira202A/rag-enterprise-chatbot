@@ -10,3 +10,7 @@ sqlalchemy
 pymysql
 email-validator
 cryptography
+bcrypt
+pyjwt
+python-multipart
+fastapi-mail

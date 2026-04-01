@@ -14,26 +14,31 @@ def generate_answer(prompt: str):
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "num_predict": 50,     # réponse un peu plus complète
+                    "num_predict": 80,
                     "temperature": 0.1,
-                    "top_k": 10,
-                    "num_ctx": 384,        # 🔥 réduit = plus rapide
-                   
-                }
+                    "top_k": 5,
+                    "top_p": 0.5,
+                    "num_ctx": 256,       # ✅ très réduit
+                    "num_thread": 4,
+                    "repeat_penalty": 1.3  # ✅ empêche la répétition
+                },
+                "stop": ["\n\n", "Q:", "Context:"]  # ✅ stoppe après la réponse
             },
-            timeout=60   # 🔥 MAX 60 sec
+            timeout=90
         )
 
         response.raise_for_status()
+        result = response.json()["response"].strip()
 
-        result = response.json()["response"]
+        # ✅ si le modèle répète la question → réponse vide détectée
+        if not result or result.lower() == prompt.split("Q:")[-1].strip().lower():
+            return "Je ne trouve pas de réponse claire dans les documents."
 
-        print("⏱ LLM réel:", time.time() - start)
-
+        print(f"⏱ LLM réel: {round(time.time() - start, 2)}s")
         return result
 
     except requests.exceptions.Timeout:
-        return "⚠️ The model is taking too long to respond."
+        return "⚠️ Timeout — modèle trop lent sur CPU."
 
     except Exception as e:
-        return f"⚠️ Error: {str(e)}"
+        return f"⚠️ Erreur: {str(e)}"

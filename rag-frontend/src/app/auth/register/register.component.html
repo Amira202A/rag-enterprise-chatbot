@@ -1,0 +1,31 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon">PGH</div>
+      <span class="logo-name">SmartBot</span>
+    </div>
+    <h2>Créer un compte</h2>
+    <p class="subtitle">Remplissez le formulaire pour recevoir votre mot de passe par email</p>
+    <div class="alert error" *ngIf="error">{{ error }}</div>
+    <div class="alert success" *ngIf="success">{{ success }}</div>
+    <div class="form-group">
+      <label>Nom complet</label>
+      <input type="text" [(ngModel)]="nom" placeholder="Votre nom" [disabled]="loading"/>
+    </div>
+    <div class="form-group">
+      <label>CIN</label>
+      <input type="text" [(ngModel)]="cin" placeholder="Numéro de carte d'identité" [disabled]="loading"/>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" [(ngModel)]="email" placeholder="votre@email.com" [disabled]="loading"/>
+    </div>
+    <button class="btn-primary" (click)="register()" [disabled]="loading">
+      {{ loading ? 'Envoi en cours...' : 'Créer mon compte' }}
+    </button>
+    <p class="switch-auth">
+      Déjà inscrit ?
+      <a (click)="goToLogin()">Se connecter</a>
+    </p>
+  </div>
+</div>
