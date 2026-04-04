@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
-import { ChatService } from './chat.service';
+import { ChatService } from '../chat.service';
 
 interface Message {
   role: 'user' | 'bot';
@@ -17,14 +17,13 @@ interface Conversation {
 }
 
 @Component({
-  selector: 'app-root',
+  selector: 'app-chat',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './chat.component.html',
-
   styleUrls: ['./chat.component.css']
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class ChatComponent implements OnInit, OnDestroy {
 
   @ViewChild('scrollContainer') scrollContainer!: ElementRef;
 
@@ -35,7 +34,6 @@ export class AppComponent implements OnInit, OnDestroy {
   isTyping = false;
   selectedLanguage = 'en-US';
 
-  // ───────── VOICE PROPERTIES ─────────
   private recognition: any = null;
   isListening = false;
   private finalTranscript = '';
@@ -58,7 +56,6 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.conversations.find(c => c.id === this.activeConversationId);
   }
 
-  // ───────── INIT ─────────
   ngOnInit() {
     this.createNewConversation();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -71,7 +68,6 @@ export class AppComponent implements OnInit, OnDestroy {
     window.speechSynthesis?.cancel();
   }
 
-  // ───────── BIP SONORE ─────────
   private playBip(type: 'start' | 'stop') {
     try {
       const ctx = new AudioContext();
@@ -90,7 +86,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ───────── WAVEFORM ─────────
   private async startWaveform() {
     try {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -130,7 +125,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.waveformBars = Array(20).fill(2);
   }
 
-  // ───────── SILENCE TIMER ─────────
   private resetSilenceTimer() {
     if (this.silenceTimer) clearTimeout(this.silenceTimer);
     this.silenceTimer = setTimeout(() => {
@@ -149,7 +143,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ───────── CONVERSATION ─────────
   createNewConversation() {
     this.chatService.createConversation().subscribe({
       next: (res: any) => {
@@ -170,7 +163,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.activeConversationId = id;
   }
 
-  // ───────── SEND MESSAGE ─────────
   onEnterKey() {
     if (this.isListening) this.stopVoice();
     this.sendMessage();
@@ -223,7 +215,6 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ───────── VOICE ─────────
   toggleVoice() {
     this.isListening ? this.stopVoice() : this.startVoice();
   }
@@ -274,7 +265,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.recognition.onerror = (event: any) => {
       if (event.error === 'not-allowed') {
-        alert('Permission micro refusée — active le micro dans ton navigateur');
+        alert('Permission micro refusée');
         this.shouldRestart = false;
         this.isListening = false;
         this.stopWaveform();
@@ -293,9 +284,8 @@ export class AppComponent implements OnInit, OnDestroy {
         this.isRestarting = true;
         setTimeout(() => {
           if (this.shouldRestart && this.isListening) {
-            try {
-              this.recognition.start();
-            } catch (e) {
+            try { this.recognition.start(); }
+            catch (e) {
               console.warn('Restart failed:', e);
               this.isListening = false;
               this.stopWaveform();
@@ -325,7 +315,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.playBip('stop');
   }
 
-  // ───────── TEXT TO SPEECH ─────────
   speak(text: string) {
     window.speechSynthesis?.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -337,7 +326,6 @@ export class AppComponent implements OnInit, OnDestroy {
     window.speechSynthesis.speak(utterance);
   }
 
-  // ───────── SCROLL ─────────
   scrollToBottom() {
     setTimeout(() => {
       if (this.scrollContainer) {

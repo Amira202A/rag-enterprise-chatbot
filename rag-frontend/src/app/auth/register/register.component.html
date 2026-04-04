@@ -1,31 +1,95 @@
-<div class="auth-container">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <div class="logo-icon">PGH</div>
-      <span class="logo-name">SmartBot</span>
+<div class="auth-wrapper">
+  <div class="auth-left">
+    <div class="brand-block">
+      <div class="brand-logo">PGH</div>
+      <h1>SmartBot</h1>
+      <p>Créez votre compte pour accéder à l'assistant IA de l'entreprise</p>
     </div>
-    <h2>Créer un compte</h2>
-    <p class="subtitle">Remplissez le formulaire pour recevoir votre mot de passe par email</p>
-    <div class="alert error" *ngIf="error">{{ error }}</div>
-    <div class="alert success" *ngIf="success">{{ success }}</div>
-    <div class="form-group">
-      <label>Nom complet</label>
-      <input type="text" [(ngModel)]="nom" placeholder="Votre nom" [disabled]="loading"/>
+    <div class="steps">
+      <div class="step done">
+        <div class="step-num">1</div>
+        <div>
+          <strong>Remplir le formulaire</strong>
+          <p>Nom, prénom, CIN et email</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <strong>Recevoir le mot de passe</strong>
+          <p>Envoyé automatiquement par email</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <strong>Se connecter</strong>
+          <p>Avec votre CIN et mot de passe</p>
+        </div>
+      </div>
     </div>
-    <div class="form-group">
-      <label>CIN</label>
-      <input type="text" [(ngModel)]="cin" placeholder="Numéro de carte d'identité" [disabled]="loading"/>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-card">
+      <div class="card-header">
+        <div class="logo-small">PGH</div>
+        <h2>Créer un compte</h2>
+        <p>Remplissez vos informations personnelles</p>
+      </div>
+
+      <div class="alert error"   *ngIf="error">   <span>⚠️</span> {{ error }}   </div>
+      <div class="alert success" *ngIf="success">  <span>✅</span> {{ success }}  </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom</label>
+          <div class="input-box">
+            <span class="input-icon">👤</span>
+            <input type="text" [(ngModel)]="nom"
+                   placeholder="Nom de famille"
+                   [disabled]="loading"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Prénom</label>
+          <div class="input-box">
+            <span class="input-icon">👤</span>
+            <input type="text" [(ngModel)]="prenom"
+                   placeholder="Prénom"
+                   [disabled]="loading"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Numéro CIN</label>
+        <div class="input-box">
+          <span class="input-icon">🪪</span>
+          <input type="text" [(ngModel)]="cin"
+                 placeholder="Numéro de carte d'identité"
+                 [disabled]="loading"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Adresse Email</label>
+        <div class="input-box">
+          <span class="input-icon">📧</span>
+          <input type="email" [(ngModel)]="email"
+                 placeholder="votre@email.com"
+                 [disabled]="loading"/>
+        </div>
+      </div>
+
+      <button class="btn-primary" (click)="register()" [disabled]="loading">
+        <span *ngIf="!loading">Créer mon compte →</span>
+        <span *ngIf="loading" class="spinner"></span>
+      </button>
+
+      <p class="switch-auth">
+        Déjà inscrit ? <a (click)="goToLogin()">Se connecter</a>
+      </p>
     </div>
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" [(ngModel)]="email" placeholder="votre@email.com" [disabled]="loading"/>
-    </div>
-    <button class="btn-primary" (click)="register()" [disabled]="loading">
-      {{ loading ? 'Envoi en cours...' : 'Créer mon compte' }}
-    </button>
-    <p class="switch-auth">
-      Déjà inscrit ?
-      <a (click)="goToLogin()">Se connecter</a>
-    </p>
   </div>
 </div>

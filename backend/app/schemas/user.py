@@ -1,9 +1,11 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 class UserRegister(BaseModel):
-    nom:   str
-    cin:   str
-    email: EmailStr
+    nom:    str
+    prenom: str
+    cin:    str
+    email:  EmailStr
 
 class UserLogin(BaseModel):
     cin:      str

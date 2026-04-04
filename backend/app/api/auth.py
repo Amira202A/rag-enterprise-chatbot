@@ -47,11 +47,12 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 
     # Créer l'utilisateur
     new_user = User(
-        nom=user.nom,
-        cin=user.cin,
-        email=user.email,
-        password=hashed
-    )
+    nom=user.nom,
+    prenom=user.prenom,
+    cin=user.cin,
+    email=user.email,
+    password=hashed
+)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -83,15 +84,16 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     token = create_token(user.id, user.cin)
 
     return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":    user.id,
-            "nom":   user.nom,
-            "cin":   user.cin,
-            "email": user.email
-        }
+    "access_token": token,
+    "token_type": "bearer",
+    "user": {
+        "id":     user.id,
+        "nom":    user.nom,
+        "prenom": user.prenom,
+        "cin":    user.cin,
+        "email":  user.email
     }
+}
 
 
 # ───────── TEST ─────────

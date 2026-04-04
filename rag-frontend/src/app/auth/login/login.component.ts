@@ -12,10 +12,11 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  cin = '';
-  password = '';
-  loading = false;
-  error = '';
+  cin          = '';
+  password     = '';
+  loading      = false;
+  error        = '';
+  showPassword = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -27,8 +28,7 @@ export class LoginComponent {
     }
     this.loading = true;
     this.http.post<any>('http://localhost:8000/auth/login', {
-      cin: this.cin,
-      password: this.password
+      cin: this.cin, password: this.password
     }).subscribe({
       next: (res) => {
         this.loading = false;
@@ -43,7 +43,5 @@ export class LoginComponent {
     });
   }
 
-  goToRegister() {
-    this.router.navigate(['/register']);
-  }
+  goToRegister() { this.router.navigate(['/register']); }
 }
