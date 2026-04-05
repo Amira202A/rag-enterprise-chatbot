@@ -46,20 +46,17 @@ def search(query: str = Body(...)):
 # 🔹 CHAT
 @router.post("/chat")
 async def chat(request: ChatRequest):
-
-    # 🔥 mesurer temps réel
     start = time.time()
 
-    # 🔹 pipeline
+    # 🔹 pipeline RAG
     result = run_pipeline(request.question)
 
     print("\n===== DEBUG RESULT =====")
     print(result)
 
-    # 🔹 temps
     duration = round(time.time() - start, 2)
 
-    # 🔹 réponse
+    # 🔹 extraction réponse
     if isinstance(result, dict):
         answer = result.get("answer", "")
     else:
@@ -69,9 +66,10 @@ async def chat(request: ChatRequest):
     print(answer)
     print("========================\n")
 
+    # 🔹 conversion conversation_id
     conversation_id = ObjectId(request.conversation_id)
 
-    # 🔹 message
+    # 🔹 sauvegarde message Mongo
     message = {
         "question": request.question,
         "answer": answer,
@@ -82,19 +80,18 @@ async def chat(request: ChatRequest):
 
     inserted = messages_collection.insert_one(message)
 
-    # 🔹 update conversation
+    # 🔹 rattacher message à la conversation
     conversations_collection.update_one(
         {"_id": conversation_id},
         {"$push": {"messages": inserted.inserted_id}}
     )
 
-    # 🔹 update title
+    # 🔹 mettre à jour le titre si c'est une nouvelle conversation
     conversations_collection.update_one(
         {"_id": conversation_id, "title": "Nouvelle conversation"},
         {"$set": {"title": request.question[:40]}}
     )
 
-    # 🔹 response
     return {
         "answer": answer,
         "time": duration

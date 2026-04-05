@@ -2,11 +2,14 @@ from app.services.embedding_service import generate_embedding
 from app.core.config import QDRANT_HOST, QDRANT_PORT, COLLECTION_NAME
 from qdrant_client import QdrantClient
 
-client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
+
+client = QdrantClient(
+    host=QDRANT_HOST,
+    port=QDRANT_PORT
+)
 
 
 def retrieve_documents(question: str, top_k: int = 5):
-
     query_vector = generate_embedding(question)
 
     search_result = client.query_points(
@@ -14,7 +17,7 @@ def retrieve_documents(question: str, top_k: int = 5):
         query=query_vector,
         limit=top_k,
         with_payload=True,
-        score_threshold=0.3   # ✅ était 0.7 → trop strict, maintenant 0.3
+        score_threshold=0.3
     )
 
     documents = []

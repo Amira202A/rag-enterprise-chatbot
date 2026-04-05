@@ -7,7 +7,7 @@ from app.api.chat import router as chat_router
 from app.api.conversation import router as conversation_router
 from app.api.auth import router as auth_router
 from app.database.sql import engine, Base
-from app.models.user import User
+from app.models.user import User  # nécessaire pour créer la table
 
 app = FastAPI(
     title="RAG Enterprise Chatbot",
@@ -15,7 +15,7 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# ✅ CORS — doit être AVANT tout le reste
+# ✅ CORS
 origins = ["*"]
 
 app.add_middleware(
@@ -44,6 +44,7 @@ def startup_event():
     else:
         print("❌ Impossible de démarrer après plusieurs tentatives.")
 
+# ✅ ROUTERS
 app.include_router(chat_router)
 app.include_router(conversation_router)
 app.include_router(auth_router)
