@@ -1,72 +1,125 @@
 <div class="auth-wrapper">
+  <div class="bg-animated">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
   <div class="auth-left">
-    <div class="brand-block">
-      <div class="brand-logo">PGH</div>
-      <h1>SmartBot</h1>
-      <p>Votre assistant IA d'entreprise intelligent</p>
+    <div class="left-inner">
+      <div class="brand-area">
+        <img src="/assets/logo.png" class="brand-logo" alt="PGH Brain"/>
+        <div class="brand-text">
+          <h1>PGH <span>Brain</span></h1>
+          <p>Plateforme IA d'entreprise nouvelle génération</p>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-num">99%</span>
+          <span class="stat-label">Précision</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">3x</span>
+          <span class="stat-label">Plus rapide</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num">24/7</span>
+          <span class="stat-label">Disponible</span>
+        </div>
+      </div>
+
+      <div class="features-list">
+        <div class="feat">
+          <div class="feat-icon">🧠</div>
+          <div class="feat-body">
+            <strong>Intelligence Documentaire</strong>
+            <span>Analyse et répond à partir de vos documents internes</span>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">🔐</div>
+          <div class="feat-body">
+            <strong>Sécurité Enterprise</strong>
+            <span>Authentification sécurisée par CIN et mot de passe unique</span>
+          </div>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">🌍</div>
+          <div class="feat-body">
+            <strong>Multilingue & Vocal</strong>
+            <span>Français, Anglais, Arabe — texte et voix</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="features">
-      <div class="feature-item">
-        <span class="feature-icon">🤖</span>
-        <span>Réponses instantanées basées sur vos documents</span>
-      </div>
-      <div class="feature-item">
-        <span class="feature-icon">🔒</span>
-        <span>Accès sécurisé par CIN et mot de passe</span>
-      </div>
-      <div class="feature-item">
-        <span class="feature-icon">🎙️</span>
-        <span>Interaction vocale multilingue</span>
-      </div>
+
+    <div class="left-footer">
+      <span>© 2026 PGH Brain</span>
+      <span>Tous droits réservés</span>
     </div>
   </div>
 
   <div class="auth-right">
-    <div class="auth-card">
-      <div class="card-header">
-        <div class="logo-small">PGH</div>
-        <h2>Connexion</h2>
-        <p>Connectez-vous avec votre CIN</p>
-      </div>
-
-      <div class="alert error" *ngIf="error">
-        <span>⚠️</span> {{ error }}
-      </div>
-
-      <div class="form-group">
-        <label>Numéro CIN</label>
-        <div class="input-box">
-          <span class="input-icon">🪪</span>
-          <input type="text" [(ngModel)]="cin"
-                 placeholder="Entrez votre CIN"
-                 [disabled]="loading"/>
+    <div class="form-card">
+      <div class="form-header">
+        <img src="assets/logo.png" class="form-logo" alt="PGH"/>
+        <div class="form-header-text">
+          <h2>Bienvenue</h2>
+          <p>Connectez-vous à votre espace PGH Brain</p>
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="alert-box" *ngIf="error">
+        <span class="alert-icon">⚠️</span>
+        <span>{{ error }}</span>
+      </div>
+
+      <div class="field">
+        <label>Numéro CIN</label>
+        <div class="input-wrap" [class.focused]="cinFocused">
+          <span class="i-icon">🪪</span>
+          <input type="text" [(ngModel)]="cin"
+                 placeholder="Votre numéro CIN"
+                 [disabled]="loading"
+                 (focus)="cinFocused=true"
+                 (blur)="cinFocused=false"/>
+        </div>
+      </div>
+
+      <div class="field">
         <label>Mot de passe</label>
-        <div class="input-box">
-          <span class="input-icon">🔑</span>
+        <div class="input-wrap" [class.focused]="pwFocused">
+          <span class="i-icon">🔑</span>
           <input [type]="showPassword ? 'text' : 'password'"
                  [(ngModel)]="password"
                  placeholder="Mot de passe reçu par email"
                  (keyup.enter)="login()"
-                 [disabled]="loading"/>
-          <span class="toggle-pw" (click)="showPassword = !showPassword">
+                 [disabled]="loading"
+                 (focus)="pwFocused=true"
+                 (blur)="pwFocused=false"/>
+          <span class="eye-btn" (click)="showPassword=!showPassword">
             {{ showPassword ? '🙈' : '👁️' }}
           </span>
         </div>
       </div>
 
-      <button class="btn-primary" (click)="login()" [disabled]="loading">
-        <span *ngIf="!loading">Se connecter →</span>
+      <button class="cta-btn" (click)="login()" [disabled]="loading">
+        <ng-container *ngIf="!loading">
+          <span>Se connecter</span>
+          <span class="arrow">→</span>
+        </ng-container>
         <span *ngIf="loading" class="spinner"></span>
       </button>
 
-      <p class="switch-auth">
-        Pas encore de compte ?
-        <a (click)="goToRegister()">Créer un compte</a>
-      </p>
+      <div class="separator">
+        <span></span><p>nouveau sur PGH Brain ?</p><span></span>
+      </div>
+
+      <button class="outline-btn" (click)="goToRegister()">
+        Créer un compte gratuitement
+      </button>
     </div>
   </div>
 </div>

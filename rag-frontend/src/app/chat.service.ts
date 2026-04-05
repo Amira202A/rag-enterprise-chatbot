@@ -1,31 +1,34 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ChatService {
 
   private apiUrl = 'http://localhost:8000';
 
   constructor(private http: HttpClient) {}
 
-  // ✅ Créer une nouvelle conversation
-  createConversation(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/conversation/new`, {});
+  private getHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token') || '';
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  // ✅ Envoyer un message
-  sendMessage(question: string, conversation_id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/chat`, {
-      question: question,
-      conversation_id: conversation_id
+  createConversation(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/conversation/new`, {}, {
+      headers: this.getHeaders()
     });
   }
 
-  // ✅ Récupérer toutes les conversations
+  sendMessage(question: string, conversation_id: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/chat`, {
+      question, conversation_id
+    }, { headers: this.getHeaders() });
+  }
+
   getConversations(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/conversation/full`);
+    return this.http.get(`${this.apiUrl}/conversation/full`, {
+      headers: this.getHeaders()
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -50,17 +50,38 @@ export class ChatComponent implements OnInit, OnDestroy {
   private animationFrame: number | null = null;
   waveformBars: number[] = Array(20).fill(2);
 
-  constructor(private chatService: ChatService) {}
+  constructor(private chatService: ChatService, private cdr: ChangeDetectorRef) {}
 
   get currentConversation(): Conversation | undefined {
     return this.conversations.find(c => c.id === this.activeConversationId);
   }
 
   ngOnInit() {
-    this.createNewConversation();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
+    this.loadConversations();
+  }
+
+  loadConversations() {
+    this.chatService.getConversations().subscribe({
+      next: (convs: any[]) => {
+        if (convs && convs.length > 0) {
+          this.conversations = convs.map(conv => ({
+            id: conv.id,
+            title: conv.title,
+            messages: conv.messages || []
+          }));
+          this.activeConversationId = '';
+          this.cdr.detectChanges();
+        } else {
+          this.createNewConversation();
+        }
+      },
+      error: () => {
+        this.createNewConversation();
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -170,8 +191,30 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   sendMessage() {
     const input = this.userMessage?.trim();
-    if (!input || this.isTyping || !this.currentConversation) return;
+    if (!input || this.isTyping) return;
 
+    if (!this.activeConversationId) {
+      this.chatService.createConversation().subscribe({
+        next: (res: any) => {
+          if (!res?.conversation_id) return;
+          const newConv: Conversation = {
+            id: res.conversation_id,
+            title: input.slice(0, 28),
+            messages: []
+          };
+          this.conversations.unshift(newConv);
+          this.activeConversationId = newConv.id;
+          this.cdr.detectChanges();
+          this._sendMessageNow(input);
+        }
+      });
+      return;
+    }
+
+    this._sendMessageNow(input);
+  }
+
+  _sendMessageNow(input: string) {
     if (this.isListening) this.stopVoice();
     window.speechSynthesis?.cancel();
 
@@ -181,16 +224,12 @@ export class ChatComponent implements OnInit, OnDestroy {
       timestamp: new Date().toLocaleTimeString()
     };
 
-    this.currentConversation.messages.push(message);
-
-    if (this.currentConversation.messages.length === 1) {
-      this.currentConversation.title = input.slice(0, 28);
-    }
-
+    this.currentConversation!.messages.push(message);
     this.userMessage = '';
     this.finalTranscript = '';
     this.interimTranscript = '';
     this.isTyping = true;
+    this.cdr.detectChanges();
     this.scrollToBottom();
 
     this.chatService.sendMessage(input, this.activeConversationId).subscribe({
@@ -201,6 +240,7 @@ export class ChatComponent implements OnInit, OnDestroy {
           timestamp: new Date().toLocaleTimeString()
         });
         this.isTyping = false;
+        this.cdr.detectChanges();
         this.scrollToBottom();
       },
       error: (err: any) => {
@@ -210,6 +250,7 @@ export class ChatComponent implements OnInit, OnDestroy {
           timestamp: new Date().toLocaleTimeString()
         });
         this.isTyping = false;
+        this.cdr.detectChanges();
         this.scrollToBottom();
       }
     });

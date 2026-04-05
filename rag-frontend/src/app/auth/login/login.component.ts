@@ -17,6 +17,8 @@ export class LoginComponent {
   loading      = false;
   error        = '';
   showPassword = false;
+  cinFocused   = false;
+  pwFocused    = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 

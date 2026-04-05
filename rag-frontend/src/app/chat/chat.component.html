@@ -7,7 +7,7 @@
         <div class="logo-icon">PGH</div>
         <div class="logo-text">
           <span class="brand">PGH</span>
-          <span class="product">SmartBot</span>
+          <span class="product">Brain</span>
         </div>
       </div>
       <button class="new-chat-btn" (click)="createNewConversation()">
@@ -45,20 +45,30 @@
     <!-- MESSAGES -->
     <div class="chat-messages" #scrollContainer>
 
-      <div
-        *ngFor="let msg of currentConversation?.messages"
-        [ngClass]="msg.role === 'user' ? 'message user' : 'message bot'"
-      >
-        <div class="avatar" *ngIf="msg.role === 'bot'">PGH</div>
-        <div class="bubble">
-          <div class="message-content">{{ msg.content }}</div>
-          <button
-            *ngIf="msg.role === 'bot'"
-            (click)="speak(msg.content)"
-            class="play-button"
-            title="Écouter"
-          >🔊</button>
-          <div class="timestamp">{{ msg.timestamp }}</div>
+      <!-- Message de bienvenue -->
+      <div *ngIf="!activeConversationId" class="welcome-screen">
+        <div class="welcome-icon">🤖</div>
+        <h2>Bonjour, bienvenue sur PGH SmartBot</h2>
+        <p>Sélectionnez une conversation ou créez-en une nouvelle pour commencer.</p>
+      </div>
+
+      <!-- Messages normaux -->
+      <div *ngIf="activeConversationId">
+        <div
+          *ngFor="let msg of currentConversation?.messages"
+          [ngClass]="msg.role === 'user' ? 'message user' : 'message bot'"
+        >
+          <div class="avatar" *ngIf="msg.role === 'bot'">PGH</div>
+          <div class="bubble">
+            <div class="message-content">{{ msg.content }}</div>
+            <button
+              *ngIf="msg.role === 'bot'"
+              (click)="speak(msg.content)"
+              class="play-button"
+              title="Écouter"
+            >🔊</button>
+            <div class="timestamp">{{ msg.timestamp }}</div>
+          </div>
         </div>
       </div>
 

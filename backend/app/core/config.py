@@ -16,8 +16,8 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # ───────── EMAIL ─────────
-MAIL_USERNAME = os.getenv("MAIL_USERNAME", "ton_email@gmail.com")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "xxxx xxxx xxxx xxxx")  # mot de passe app Gmail
-MAIL_FROM    = os.getenv("MAIL_USERNAME", "ton_email@gmail.com")
-MAIL_SERVER  = "smtp.gmail.com"
-MAIL_PORT    = 587
+MAIL_USERNAME = "smartbotpgh@gmail.com"
+MAIL_PASSWORD = "iwhi bprf rurb ahdq"
+MAIL_FROM     = "smartbotpgh@gmail.com"
+MAIL_SERVER   = "smtp.gmail.com"
+MAIL_PORT     = 587
