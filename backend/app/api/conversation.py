@@ -9,7 +9,6 @@ router = APIRouter(prefix="/conversation", tags=["Conversation"])
 # ✅ Créer une nouvelle conversation
 @router.post("/new")
 def create_conversation():
-
     conversation = {
         "title": "Nouvelle conversation",
         "created_at": datetime.utcnow(),
@@ -26,7 +25,6 @@ def create_conversation():
 # ✅ Ajouter un message dans une conversation
 @router.post("/{conversation_id}/message")
 def add_message(conversation_id: str, question: str, answer: str):
-
     message = {
         "question": question,
         "answer": answer,
@@ -36,13 +34,13 @@ def add_message(conversation_id: str, question: str, answer: str):
 
     result = messages_collection.insert_one(message)
 
-    # ajouter message dans conversation
+    # 🔹 ajouter le message dans la conversation
     conversations_collection.update_one(
         {"_id": ObjectId(conversation_id)},
         {"$push": {"messages": result.inserted_id}}
     )
 
-    # 🔎 vérifier si c'est le premier message
+    # 🔹 si c'est le premier message → mettre à jour le titre
     message_count = messages_collection.count_documents({
         "conversationId": ObjectId(conversation_id)
     })
@@ -64,7 +62,6 @@ def add_message(conversation_id: str, question: str, answer: str):
 # ✅ Récupérer toutes les conversations (simple)
 @router.get("/")
 def get_all_conversations():
-
     conversations = list(conversations_collection.find().sort("created_at", -1))
 
     for conv in conversations:
@@ -76,19 +73,15 @@ def get_all_conversations():
 # ⭐ Route optimisée pour Angular (avec messages)
 @router.get("/full")
 def get_conversations():
-
     conversations = []
 
     for conv in conversations_collection.find().sort("created_at", -1):
-
         messages = []
 
         for msg_id in conv.get("messages", []):
-
             msg = messages_collection.find_one({"_id": msg_id})
 
             if msg:
-
                 messages.append({
                     "role": "user",
                     "content": msg["question"],
@@ -113,7 +106,6 @@ def get_conversations():
 # ✅ Récupérer une conversation avec ses messages
 @router.get("/{conversation_id}")
 def get_conversation_with_messages(conversation_id: str):
-
     conversation = conversations_collection.find_one(
         {"_id": ObjectId(conversation_id)}
     )

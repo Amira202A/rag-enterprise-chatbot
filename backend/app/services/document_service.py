@@ -34,7 +34,9 @@ def create_collection():
 
 
 def add_document(text: str, metadata: dict = None):
-
+    """
+    Ajoute un document (ou chunk) dans Qdrant
+    """
     embedding = generate_embedding(text)
 
     point = PointStruct(
@@ -59,24 +61,30 @@ def search_documents(query: str, limit: int = 3):
     """
     Recherche les documents les plus proches du texte donné
     """
-
-    # 1️⃣ Générer l'embedding de la question
     query_vector = generate_embedding(query)
 
-    # 2️⃣ Rechercher dans Qdrant (méthode moderne)
     search_result = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
         limit=limit
     )
 
-    # 3️⃣ Formater les résultats
     results = []
 
     for hit in search_result.points:
         results.append({
             "score": hit.score,
-            "text": hit.payload["text"]
+            "text": hit.payload.get("text", ""),
+            "source": hit.payload.get("source"),
+            "page": hit.payload.get("page")
         })
 
     return results
+
+
+def count_documents():
+    """
+    Retourne le nombre total de chunks stockés dans Qdrant
+    """
+    count = client.count(collection_name=COLLECTION_NAME, exact=True)
+    return count.count
