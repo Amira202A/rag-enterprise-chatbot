@@ -47,12 +47,12 @@ def register(user: UserRegister, db: Session = Depends(get_db)):
 
     # Créer l'utilisateur
     new_user = User(
-    nom=user.nom,
-    prenom=user.prenom,
-    cin=user.cin,
-    email=user.email,
-    password=hashed
-)
+        nom=user.nom,
+        prenom=user.prenom,
+        cin=user.cin,
+        email=user.email,
+        password=hashed
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -87,11 +87,12 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     "access_token": token,
     "token_type": "bearer",
     "user": {
-        "id":     user.id,
-        "nom":    user.nom,
-        "prenom": user.prenom,
-        "cin":    user.cin,
-        "email":  user.email
+        "id":       user.id,
+        "nom":      user.nom,
+        "prenom":   user.prenom,
+        "cin":      user.cin,
+        "email":    user.email,
+        "is_admin": user.is_admin
     }
 }
 
@@ -100,3 +101,28 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 @router.get("/test")
 def test():
     return {"message": "Auth API OK"}
+
+
+# ───────── ADMIN LOGIN ─────────
+@router.post("/admin/login")
+def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.cin == credentials.cin).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="CIN introuvable")
+    if not bcrypt.checkpw(credentials.password.encode(), user.password.encode()):
+        raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Accès admin requis")
+    token = create_token(user.id, user.cin)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id":       user.id,
+            "nom":      user.nom,
+            "prenom":   user.prenom,
+            "cin":      user.cin,
+            "email":    user.email,
+            "is_admin": user.is_admin
+        }
+    }

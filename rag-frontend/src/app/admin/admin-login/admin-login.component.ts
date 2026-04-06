@@ -5,20 +5,18 @@ import { Router } from '@angular/router';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-admin-login',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule],
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.css']
+  templateUrl: './admin-login.component.html',
+  styleUrls: ['./admin-login.component.css']
 })
-export class LoginComponent {
+export class AdminLoginComponent {
   cin          = '';
   password     = '';
   loading      = false;
   error        = '';
   showPassword = false;
-  cinFocused   = false;
-  pwFocused    = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -29,28 +27,19 @@ export class LoginComponent {
       return;
     }
     this.loading = true;
-    this.http.post<any>('http://localhost:8000/auth/login', {
+    this.http.post<any>('http://localhost:8000/auth/admin/login', {
       cin: this.cin, password: this.password
     }).subscribe({
       next: (res) => {
-  this.loading = false;
-  localStorage.setItem('token', res.access_token);
-  localStorage.setItem('user', JSON.stringify(res.user));
-
-  if (res.user.is_admin) {
-    localStorage.setItem('admin_token', res.access_token);
-    localStorage.setItem('admin_user', JSON.stringify(res.user));
-    this.router.navigate(['/admin']);
-  } else {
-    this.router.navigate(['/chat']);
-  }
-},
+        this.loading = false;
+        localStorage.setItem('admin_token', res.access_token);
+        localStorage.setItem('admin_user', JSON.stringify(res.user));
+        this.router.navigate(['/admin']);
+      },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.detail || 'Erreur de connexion.';
       }
     });
   }
-
-  goToRegister() { this.router.navigate(['/register']); }
 }

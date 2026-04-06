@@ -10,6 +10,7 @@
           <span class="product">Brain</span>
         </div>
       </div>
+
       <button class="new-chat-btn" (click)="createNewConversation()">
         + Nouvelle conversation
       </button>
@@ -25,6 +26,13 @@
       >
         {{ conv.title }}
       </div>
+    </div>
+
+    <!-- FOOTER avec logout -->
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()" title="Se déconnecter">
+        ⎋ Déconnexion
+      </button>
     </div>
   </aside>
 

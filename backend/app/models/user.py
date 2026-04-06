@@ -21,4 +21,5 @@ class User(Base):
     subsidiary_label    = Column(String(100), nullable=True)
 
     is_active           = Column(Boolean, default=True)
+    is_admin            = Column(Boolean, default=False)
     add_date            = Column(DateTime, server_default=func.now())

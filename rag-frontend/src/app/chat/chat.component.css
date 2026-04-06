@@ -525,3 +525,46 @@
   font-size: 15px;
   max-width: 400px;
 }
+.logout-btn {
+  width: 100%;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1px solid #374151;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.logout-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+.sidebar-footer {
+  margin-top: auto;   /* pousse vers le bas */
+  padding-top: 16px;
+  border-top: 1px solid #1f2937;
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #374151;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.logout-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}

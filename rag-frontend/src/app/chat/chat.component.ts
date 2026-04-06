@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { ChatService } from '../chat.service';
+import { Router } from '@angular/router';
 
 interface Message {
   role: 'user' | 'bot';
@@ -50,7 +51,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   private animationFrame: number | null = null;
   waveformBars: number[] = Array(20).fill(2);
 
-  constructor(private chatService: ChatService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private chatService: ChatService,
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {}
 
   get currentConversation(): Conversation | undefined {
     return this.conversations.find(c => c.id === this.activeConversationId);
@@ -87,6 +92,11 @@ export class ChatComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.stopVoice();
     window.speechSynthesis?.cancel();
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    this.router.navigate(['/login']);
   }
 
   private playBip(type: 'start' | 'stop') {

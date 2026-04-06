@@ -1,0 +1,52 @@
+<div class="admin-login-wrapper">
+  <div class="bg-animated">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+  </div>
+
+  <div class="login-card">
+    <div class="card-header">
+      <img src="assets/logo.png" alt="PGH" class="logo"/>
+      <div>
+        <h1>Administration</h1>
+        <p>Accès réservé aux administrateurs</p>
+      </div>
+    </div>
+
+    <div class="alert-error" *ngIf="error">
+      <span>⚠️</span> {{ error }}
+    </div>
+
+    <div class="field">
+      <label>Numéro CIN</label>
+      <div class="input-box">
+        <span>🪪</span>
+        <input type="text" [(ngModel)]="cin"
+               placeholder="CIN administrateur"
+               [disabled]="loading"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Mot de passe</label>
+      <div class="input-box">
+        <span>🔑</span>
+        <input [type]="showPassword ? 'text' : 'password'"
+               [(ngModel)]="password"
+               placeholder="Mot de passe"
+               (keyup.enter)="login()"
+               [disabled]="loading"/>
+        <span class="eye" (click)="showPassword=!showPassword">
+          {{ showPassword ? '🙈' : '👁️' }}
+        </span>
+      </div>
+    </div>
+
+    <button class="btn-admin" (click)="login()" [disabled]="loading">
+      <span *ngIf="!loading">Accéder au dashboard →</span>
+      <span *ngIf="loading" class="spinner"></span>
+    </button>
+
+    <div class="badge">🔐 Espace sécurisé — Administrateurs uniquement</div>
+  </div>
+</div>

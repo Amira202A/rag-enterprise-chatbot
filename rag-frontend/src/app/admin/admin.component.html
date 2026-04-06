@@ -1,0 +1,184 @@
+<div class="admin-wrapper">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <img src="assets/logo.png" alt="PGH" class="sb-logo"/>
+        <div>
+          <h2>PGH Brain</h2>
+          <span>Administration</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button [class.active]="activeTab==='stats'" (click)="activeTab='stats'">
+          <span>📊</span> Statistiques
+        </button>
+        <button [class.active]="activeTab==='users'" (click)="activeTab='users'">
+          <span>👥</span> Utilisateurs
+        </button>
+        <button [class.active]="activeTab==='docs'" (click)="activeTab='docs'">
+          <span>📄</span> Documents
+        </button>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="admin-profile">
+        <div class="admin-avatar">{{ adminUser.nom?.charAt(0) }}</div>
+        <div>
+          <strong>{{ adminUser.nom }}</strong>
+          <span>Administrateur</span>
+        </div>
+      </div>
+      <button class="logout-btn" (click)="logout()">
+        🚪 Déconnexion
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
+
+    <!-- HEADER -->
+    <div class="admin-header">
+      <div>
+        <h1 *ngIf="activeTab==='stats'">Tableau de bord</h1>
+        <h1 *ngIf="activeTab==='users'">Gestion des utilisateurs</h1>
+        <h1 *ngIf="activeTab==='docs'">Gestion des documents</h1>
+        <p>Bienvenue, {{ adminUser.nom }} 👋</p>
+      </div>
+      <div class="header-badge">🔐 Admin</div>
+    </div>
+
+    <!-- STATS -->
+    <div *ngIf="activeTab==='stats'" class="tab-content">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <span class="stat-num">{{ stats.total_users || 0 }}</span>
+            <span class="stat-label">Utilisateurs total</span>
+          </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <span class="stat-num">{{ stats.active_users || 0 }}</span>
+            <span class="stat-label">Utilisateurs actifs</span>
+          </div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon">🚫</div>
+          <div class="stat-info">
+            <span class="stat-num">{{ stats.inactive_users || 0 }}</span>
+            <span class="stat-label">Utilisateurs inactifs</span>
+          </div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">💬</div>
+          <div class="stat-info">
+            <span class="stat-num">{{ stats.total_conversations || 0 }}</span>
+            <span class="stat-label">Conversations</span>
+          </div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon">📨</div>
+          <div class="stat-info">
+            <span class="stat-num">{{ stats.total_messages || 0 }}</span>
+            <span class="stat-label">Messages échangés</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div *ngIf="activeTab==='users'" class="tab-content">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Liste des utilisateurs</h3>
+          <span class="badge-count">{{ users.length }} utilisateurs</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nom</th>
+              <th>Prénom</th>
+              <th>CIN</th>
+              <th>Email</th>
+              <th>Statut</th>
+              <th>Rôle</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.id }}</td>
+              <td><strong>{{ user.nom }}</strong></td>
+              <td>{{ user.prenom }}</td>
+              <td><code>{{ user.cin }}</code></td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="badge" [class.active]="user.is_active" [class.inactive]="!user.is_active">
+                  {{ user.is_active ? '✅ Actif' : '🚫 Inactif' }}
+                </span>
+              </td>
+              <td>
+                <span class="badge" [class.admin]="user.is_admin">
+                  {{ user.is_admin ? '👑 Admin' : '👤 User' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn-toggle" (click)="toggleUser(user)"
+                        [class.deactivate]="user.is_active">
+                  {{ user.is_active ? 'Désactiver' : 'Activer' }}
+                </button>
+                <button class="btn-delete" (click)="deleteUser(user)"
+                        [disabled]="user.is_admin">
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div *ngIf="activeTab==='docs'" class="tab-content">
+      <div class="upload-card">
+        <div class="upload-icon">📄</div>
+        <h3>Importer un document PDF</h3>
+        <p>Le document sera automatiquement découpé et indexé dans la base vectorielle</p>
+
+        <div class="upload-zone" [class.has-file]="selectedFile">
+          <input type="file" accept=".pdf" (change)="onFileSelected($event)" id="fileInput"/>
+          <label for="fileInput">
+            <span *ngIf="!selectedFile">
+              📁 Cliquez pour sélectionner un PDF
+            </span>
+            <span *ngIf="selectedFile">
+              ✅ {{ selectedFile.name }}
+            </span>
+          </label>
+        </div>
+
+        <button class="btn-upload" (click)="uploadPDF()"
+                [disabled]="!selectedFile || uploading">
+          <span *ngIf="!uploading">⬆️ Importer le document</span>
+          <span *ngIf="uploading" class="spinner"></span>
+        </button>
+
+        <div class="alert-success" *ngIf="uploadMessage">
+          ✅ {{ uploadMessage }}
+        </div>
+        <div class="alert-error" *ngIf="uploadError">
+          ❌ {{ uploadError }}
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>

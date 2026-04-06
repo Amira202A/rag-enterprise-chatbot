@@ -41,6 +41,18 @@ body {
   background-color: var(--color-bg-dark);
   color: var(--color-text-light);
   height: 100vh;
+  overflow: auto;
+}
+
+app-login, app-register {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+app-chat {
+  display: block;
+  height: 100vh;
   overflow: hidden;
 }
 
@@ -110,4 +122,8 @@ body {
 .mic-btn.active {
   transform: scale(1.2);
   filter: drop-shadow(0 0 6px #4f8ef7);
+}
+app-register {
+  display: block;
+  height: 100vh;
 }

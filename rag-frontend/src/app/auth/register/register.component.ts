@@ -12,19 +12,22 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   styleUrls: ['./register.component.css']
 })
 export class RegisterComponent {
-  nom     = '';
-  prenom  = '';
-  cin     = '';
-  email   = '';
-  loading = false;
-  error   = '';
-  success = '';
+  nom          = '';
+  prenom       = '';
+  cin          = '';
+  email        = '';
+  loading      = false;
+  error        = '';
+  success      = '';
+  nomFocused   = false;
+  prenomFocused= false;
+  cinFocused   = false;
+  emailFocused = false;
 
   constructor(private http: HttpClient, private router: Router) {}
 
   register() {
-    this.error = '';
-    this.success = '';
+    this.error = ''; this.success = '';
     if (!this.nom || !this.prenom || !this.cin || !this.email) {
       this.error = 'Tous les champs sont obligatoires.';
       return;
