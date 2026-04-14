@@ -21,9 +21,16 @@ def get_db():
         db.close()
 
 
-def create_token(user_id: int, cin: str) -> str:
+# ✅ MODIFICATION: ajout departments + is_admin dans le token
+def create_token(user_id: int, cin: str, departments: list = None, is_admin: bool = False) -> str:
     expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    payload = {"sub": str(user_id), "cin": cin, "exp": expire}
+    payload = {
+        "sub":         str(user_id),
+        "cin":         cin,
+        "departments": departments or [],
+        "is_admin":    is_admin,
+        "exp":         expire
+    }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -31,37 +38,30 @@ def create_token(user_id: int, cin: str) -> str:
 @router.post("/register")
 def register(user: UserRegister, db: Session = Depends(get_db)):
 
-    # Vérifier email unique
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email déjà utilisé")
 
-    # Vérifier CIN unique
     if db.query(User).filter(User.cin == user.cin).first():
         raise HTTPException(status_code=400, detail="CIN déjà enregistré")
 
-    # Générer mot de passe
     raw_password = generate_password()
-
-    # Hasher le mot de passe
     hashed = bcrypt.hashpw(raw_password.encode(), bcrypt.gensalt()).decode()
 
-    # Créer l'utilisateur
     new_user = User(
         nom=user.nom,
         prenom=user.prenom,
         cin=user.cin,
         email=user.email,
-        password=hashed
+        password=hashed,
+        departments=user.departments
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Envoyer l'email
     sent = send_password_email(user.email, user.nom, raw_password)
 
     if not sent:
-        # Rollback si email échoue
         db.delete(new_user)
         db.commit()
         raise HTTPException(status_code=500, detail="Erreur envoi email — compte non créé")
@@ -81,20 +81,27 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     if not bcrypt.checkpw(credentials.password.encode(), user.password.encode()):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
 
-    token = create_token(user.id, user.cin)
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Compte désactivé")
+
+    departments = user.get_departments_list()
+
+    # ✅ token avec is_admin
+    token = create_token(user.id, user.cin, departments, user.is_admin)
 
     return {
-    "access_token": token,
-    "token_type": "bearer",
-    "user": {
-        "id":       user.id,
-        "nom":      user.nom,
-        "prenom":   user.prenom,
-        "cin":      user.cin,
-        "email":    user.email,
-        "is_admin": user.is_admin
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id":          user.id,
+            "nom":         user.nom,
+            "prenom":      user.prenom,
+            "cin":         user.cin,
+            "email":       user.email,
+            "departments": departments,
+            "is_admin":    user.is_admin
+        }
     }
-}
 
 
 # ───────── TEST ─────────
@@ -107,22 +114,31 @@ def test():
 @router.post("/admin/login")
 def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.cin == credentials.cin).first()
+
     if not user:
         raise HTTPException(status_code=401, detail="CIN introuvable")
+
     if not bcrypt.checkpw(credentials.password.encode(), user.password.encode()):
         raise HTTPException(status_code=401, detail="Mot de passe incorrect")
+
     if not user.is_admin:
         raise HTTPException(status_code=403, detail="Accès admin requis")
-    token = create_token(user.id, user.cin)
+
+    departments = user.get_departments_list()
+
+    # ✅ token avec is_admin
+    token = create_token(user.id, user.cin, departments, user.is_admin)
+
     return {
         "access_token": token,
         "token_type": "bearer",
         "user": {
-            "id":       user.id,
-            "nom":      user.nom,
-            "prenom":   user.prenom,
-            "cin":      user.cin,
-            "email":    user.email,
-            "is_admin": user.is_admin
+            "id":          user.id,
+            "nom":         user.nom,
+            "prenom":      user.prenom,
+            "cin":         user.cin,
+            "email":       user.email,
+            "departments": departments,
+            "is_admin":    user.is_admin
         }
     }

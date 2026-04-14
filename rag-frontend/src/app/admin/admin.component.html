@@ -52,8 +52,9 @@
       <div class="header-badge">🔐 Admin</div>
     </div>
 
-    <!-- STATS -->
+    <!-- ══════════ STATS ══════════ -->
     <div *ngIf="activeTab==='stats'" class="tab-content">
+
       <div class="stats-grid">
         <div class="stat-card blue">
           <div class="stat-icon">👥</div>
@@ -91,9 +92,27 @@
           </div>
         </div>
       </div>
+
+      <!-- K-MEANS -->
+      <div class="kmeans-card">
+        <div class="kmeans-header">
+          <div class="kmeans-left">
+            <div class="kmeans-icon-box">🧠</div>
+            <div>
+              <h3>Clustering K-Means</h3>
+              <p class="kmeans-hint">Mise à jour automatique après chaque import</p>
+            </div>
+          </div>
+          <div class="kmeans-indicator" [class.active]="kmeansActive">
+            <span class="indicator-dot"></span>
+            <span>{{ kmeansActive ? 'Actif — ' + kmeansNClusters + ' clusters' : 'En attente de documents' }}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- USERS -->
+    <!-- ══════════ USERS ══════════ -->
     <div *ngIf="activeTab==='users'" class="tab-content">
       <div class="table-card">
         <div class="table-header">
@@ -110,12 +129,13 @@
               <th>Email</th>
               <th>Statut</th>
               <th>Rôle</th>
+              <th>Départements</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let user of users">
-              <td>{{ user.id }}</td>
+            <tr *ngFor="let user of users; let i = index">
+              <td>{{ i + 1 }}</td>
               <td><strong>{{ user.nom }}</strong></td>
               <td>{{ user.prenom }}</td>
               <td><code>{{ user.cin }}</code></td>
@@ -130,6 +150,45 @@
                   {{ user.is_admin ? '👑 Admin' : '👤 User' }}
                 </span>
               </td>
+
+              <!-- ✅ COLONNE DEPARTEMENTS FIX -->
+              <td>
+                <!-- ✅ Admin = tous les départements -->
+                <span *ngIf="user.is_admin" class="dept-all-badge">
+                  🌐 Tous les départements
+                </span>
+
+                <!-- ✅ User normal -->
+                <div class="dept-manager" *ngIf="!user.is_admin">
+                  <div class="dept-active-tags">
+                    <span class="dept-active-tag" *ngFor="let d of user.departments">
+                      {{ d }}
+                      <span class="dept-remove"
+                            (click)="toggleDepartment(user, d, {target:{checked:false}})">×</span>
+                    </span>
+                    <span class="dept-empty" *ngIf="!user.departments?.length">Aucun</span>
+                  </div>
+
+                  <div class="dept-dropdown">
+                    <button class="dept-add-btn" (click)="user.showDepts = !user.showDepts">
+                      + Ajouter
+                    </button>
+                    <div class="dept-dropdown-menu" *ngIf="user.showDepts">
+                      <label *ngFor="let dept of allDepartments" class="dept-option"
+                             [class.selected]="user.departments?.includes(dept)"
+                             (click)="toggleDepartment(user, dept,
+                             {target:{checked: !user.departments?.includes(dept)}});
+                             user.showDepts=false">
+                        <span class="dept-check-icon">
+                          {{ user.departments?.includes(dept) ? '✅' : '○' }}
+                        </span>
+                        {{ dept }}
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
               <td class="actions">
                 <button class="btn-toggle" (click)="toggleUser(user)"
                         [class.deactivate]="user.is_active">
@@ -146,38 +205,79 @@
       </div>
     </div>
 
-    <!-- DOCUMENTS -->
+    <!-- ══════════ DOCUMENTS ══════════ -->
     <div *ngIf="activeTab==='docs'" class="tab-content">
+
+      <!-- Liste documents -->
+      <div class="table-card" style="margin-bottom: 24px;">
+        <div class="table-header">
+          <h3>📚 Documents indexés</h3>
+          <span class="badge-count">{{ documents.length }} sources</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fichier</th>
+              <th>Département</th>
+              <th>Pages</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of documents">
+              <td>📄 {{ doc.source }}</td>
+              <td>
+                <span class="badge active">{{ doc.department }}</span>
+              </td>
+              <td>{{ doc.pages }}</td>
+              <td>
+                <button class="btn-delete" (click)="deleteDocument(doc.source)">
+                  Supprimer
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Upload -->
       <div class="upload-card">
         <div class="upload-icon">📄</div>
         <h3>Importer un document PDF</h3>
-        <p>Le document sera automatiquement découpé et indexé dans la base vectorielle</p>
+        <p>Choisissez le département cible — seuls les utilisateurs de ce département verront ce document</p>
+
+        <div class="field" style="margin-bottom: 20px; text-align: left;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:8px;">
+            Département cible
+          </label>
+          <select [(ngModel)]="uploadDepartment" class="dept-select" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid #e2e8f0;">
+            <option value="IT">🖥️ IT</option>
+            <option value="RH">👥 RH</option>
+            <option value="Marketing">📣 Marketing</option>
+            <option value="Finance">💰 Finance</option>
+            <option value="Direction">🏢 Direction</option>
+            <option value="General">🌐 Général (tous)</option>
+          </select>
+        </div>
 
         <div class="upload-zone" [class.has-file]="selectedFile">
           <input type="file" accept=".pdf" (change)="onFileSelected($event)" id="fileInput"/>
           <label for="fileInput">
-            <span *ngIf="!selectedFile">
-              📁 Cliquez pour sélectionner un PDF
-            </span>
-            <span *ngIf="selectedFile">
-              ✅ {{ selectedFile.name }}
-            </span>
+            <span *ngIf="!selectedFile">📁 Cliquez pour sélectionner un PDF</span>
+            <span *ngIf="selectedFile">✅ {{ selectedFile.name }}</span>
           </label>
         </div>
 
         <button class="btn-upload" (click)="uploadPDF()"
                 [disabled]="!selectedFile || uploading">
-          <span *ngIf="!uploading">⬆️ Importer le document</span>
+          <span *ngIf="!uploading">⬆️ Importer pour {{ uploadDepartment }}</span>
           <span *ngIf="uploading" class="spinner"></span>
         </button>
 
-        <div class="alert-success" *ngIf="uploadMessage">
-          ✅ {{ uploadMessage }}
-        </div>
-        <div class="alert-error" *ngIf="uploadError">
-          ❌ {{ uploadError }}
-        </div>
+        <div class="alert-success" *ngIf="uploadMessage">✅ {{ uploadMessage }}</div>
+        <div class="alert-error"   *ngIf="uploadError">❌ {{ uploadError }}</div>
       </div>
+
     </div>
 
   </main>

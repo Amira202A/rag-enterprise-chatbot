@@ -38,12 +38,13 @@
 /* Body global */
 body {
   font-family: 'Inter', 'Segoe UI', sans-serif;
-  background-color: var(--color-bg-dark);
+  background-color: #060e22;
   color: var(--color-text-light);
-  height: 100vh;
+  height: 100%;
   overflow: auto;
 }
 
+html { height: 100%; }
 app-login, app-register {
   display: block;
   height: 100vh;

@@ -18,7 +18,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 # ───────── EMAIL ─────────
 MAIL_USERNAME = os.getenv("MAIL_USERNAME", "smartbotpgh@gmail.com")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "iwhi bprf rurb ahdq")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "wqavteomudbrihgg")
 MAIL_FROM     = os.getenv("MAIL_USERNAME", "smartbotpgh@gmail.com")
 MAIL_SERVER   = "smtp.gmail.com"
 MAIL_PORT     = 587

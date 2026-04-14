@@ -14,15 +14,15 @@ def generate_answer(prompt: str):
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "num_predict": 100,
+                    "num_predict": 800,
                     "temperature": 0.15,
                     "top_k": 10,
                     "top_p": 0.6,
-                    "num_ctx": 512,
+                    "num_ctx": 1024,
                     "num_thread": 4,
                     "repeat_penalty": 1.3
                 },
-                "stop": ["\n\n", "Q:", "Context:", "QUESTION:", "ANSWER:"]
+                 "stop": ["Q:", "Context:", "QUESTION:"]
             },
             timeout=90
         )
@@ -74,6 +74,9 @@ STRICT RULES:
 - Be short, natural, helpful and conversational.
 - Do NOT invent enterprise document information.
 - Maximum 2 short sentences.
+IMPORTANT:
+- Always complete your answer.
+- Never stop mid-sentence.
 
 USER MESSAGE:
 {question}

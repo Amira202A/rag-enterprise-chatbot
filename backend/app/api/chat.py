@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Header
 from pydantic import BaseModel
 from datetime import datetime
 from bson import ObjectId
 import time
+import jwt
 
 from app.services.embedding_service import generate_embedding
 from app.services.document_service import add_document, search_documents
 from app.rag.pipeline import run_pipeline
 from app.database.mongo import conversations_collection, messages_collection
+from app.core.config import SECRET_KEY, ALGORITHM
 
 
 # ✅ Router
@@ -18,6 +20,24 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     question: str
     conversation_id: str
+
+
+# ✅ NOUVEAU: récupérer user + departments + is_admin depuis token
+def get_user_from_token(authorization: str = None) -> dict:
+    if not authorization or not authorization.startswith("Bearer "):
+        return {"id": None, "departments": [], "is_admin": False}
+
+    token = authorization.replace("Bearer ", "")
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return {
+            "id":          payload.get("sub"),
+            "departments": payload.get("departments", []),
+            "is_admin":    payload.get("is_admin", False)
+        }
+    except:
+        return {"id": None, "departments": [], "is_admin": False}
 
 
 # 🔹 TEST EMBEDDING
@@ -45,11 +65,19 @@ def search(query: str = Body(...)):
 
 # 🔹 CHAT
 @router.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(
+    request: ChatRequest,
+    authorization: str = Header(None)
+):
     start = time.time()
 
-    # 🔹 pipeline RAG
-    result = run_pipeline(request.question)
+    # ✅ récupération user info depuis token
+    user_info   = get_user_from_token(authorization)
+    departments = user_info.get("departments", [])
+    is_admin    = user_info.get("is_admin", False)
+
+    # ✅ pipeline avec departments + is_admin
+    result = run_pipeline(request.question, departments=departments, is_admin=is_admin)
 
     print("\n===== DEBUG RESULT =====")
     print(result)
@@ -71,11 +99,12 @@ async def chat(request: ChatRequest):
 
     # 🔹 sauvegarde message Mongo
     message = {
-        "question": request.question,
-        "answer": answer,
+        "question":       request.question,
+        "answer":         answer,
         "conversationId": conversation_id,
-        "created_at": datetime.utcnow(),
-        "response_time": duration
+        "created_at":     datetime.utcnow(),
+        "response_time":  duration,
+        "departments":    departments
     }
 
     inserted = messages_collection.insert_one(message)

@@ -1,5 +1,12 @@
 from qdrant_client import QdrantClient
-from qdrant_client.models import VectorParams, Distance, PointStruct
+from qdrant_client.models import (
+    VectorParams,
+    Distance,
+    PointStruct,
+    Filter,
+    FieldCondition,
+    MatchValue
+)
 from app.core.config import (
     QDRANT_HOST,
     QDRANT_PORT,
@@ -10,7 +17,7 @@ from app.services.embedding_service import generate_embedding
 import uuid
 
 
-client = QdrantClient(
+client = QDRANTClient = QdrantClient(
     host=QDRANT_HOST,
     port=QDRANT_PORT,
 )
@@ -33,6 +40,7 @@ def create_collection():
         print("ℹ️ Collection déjà existante")
 
 
+# ✅ MODIFICATION: ajout department dans payload
 def add_document(text: str, metadata: dict = None):
     """
     Ajoute un document (ou chunk) dans Qdrant
@@ -45,7 +53,8 @@ def add_document(text: str, metadata: dict = None):
         payload={
             "text": text,
             "source": metadata.get("source") if metadata else None,
-            "page": metadata.get("page") if metadata else None
+            "page": metadata.get("page") if metadata else None,
+            "department": metadata.get("department") if metadata else None,  # ✅ ajouté
         }
     )
 
@@ -57,16 +66,30 @@ def add_document(text: str, metadata: dict = None):
     return {"status": "Document ajouté"}
 
 
-def search_documents(query: str, limit: int = 3):
+# ✅ MODIFICATION: filtre par département
+def search_documents(query: str, limit: int = 3, department: str = None):
     """
     Recherche les documents les plus proches du texte donné
     """
     query_vector = generate_embedding(query)
 
+    query_filter = None
+
+    if department:
+        query_filter = Filter(
+            must=[
+                FieldCondition(
+                    key="department",
+                    match=MatchValue(value=department)
+                )
+            ]
+        )
+
     search_result = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
-        limit=limit
+        limit=limit,
+        query_filter=query_filter  # ✅ ajouté
     )
 
     results = []
@@ -76,7 +99,8 @@ def search_documents(query: str, limit: int = 3):
             "score": hit.score,
             "text": hit.payload.get("text", ""),
             "source": hit.payload.get("source"),
-            "page": hit.payload.get("page")
+            "page": hit.payload.get("page"),
+            "department": hit.payload.get("department")  # ✅ ajouté
         })
 
     return results

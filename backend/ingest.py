@@ -1,10 +1,14 @@
 from pypdf import PdfReader
 from app.services.document_service import add_document, create_collection
 
+# ✅ MODIFICATION: ajout department pour chaque PDF
 PDF_FILES = [
-    "data/fichier1.pdf",
-    "data/ml.pdf"
+    {"path": "data/fichier1.pdf", "department": "IT"},
+    {"path": "data/ml.pdf", "department": "IT"},
+    # {"path": "data/rh.pdf", "department": "RH"},
+    # {"path": "data/marketing.pdf", "department": "Marketing"},
 ]
+
 
 def chunk_text(text, chunk_size=600, overlap=80):
     chunks = []
@@ -12,20 +16,22 @@ def chunk_text(text, chunk_size=600, overlap=80):
     while start < len(text):
         end = start + chunk_size
         chunk = text[start:end].strip()
-        if len(chunk) > 50:  # ✅ ignore les chunks trop courts
+        if len(chunk) > 50:
             chunks.append(chunk)
         start += chunk_size - overlap
     return chunks
 
-def ingest_pdf(path):
-    print(f"\n📄 Lecture du PDF : {path}")
+
+# ✅ MODIFICATION: ajout param department
+def ingest_pdf(path, department=None):
+    print(f"\n📄 Lecture du PDF : {path} | Département: {department}")
     reader = PdfReader(path)
     total_chunks = 0
-    seen_chunks = set()  # ✅ déduplication
+    seen_chunks = set()
 
     for page_number, page in enumerate(reader.pages):
 
-        if page_number < 2:  # ✅ était 5, trop restrictif
+        if page_number < 2:
             continue
 
         text = page.extract_text()
@@ -35,7 +41,6 @@ def ingest_pdf(path):
         chunks = chunk_text(text)
 
         for chunk in chunks:
-            # ✅ évite les doublons
             chunk_hash = hash(chunk[:100])
             if chunk_hash in seen_chunks:
                 continue
@@ -45,19 +50,25 @@ def ingest_pdf(path):
                 chunk,
                 metadata={
                     "source": path.split("/")[-1],
-                    "page": page_number + 1
+                    "page": page_number + 1,
+                    "department": department  # ✅ ajouté
                 }
             )
             total_chunks += 1
 
-    print(f"✅ {path} ingéré — {total_chunks} chunks ajoutés")
+    print(f"✅ {path} ingéré — {total_chunks} chunks ajoutés pour {department}")
+
 
 def main():
     print("🚀 Début ingestion")
     create_collection()
+
+    # ✅ MODIFICATION: boucle avec department
     for pdf in PDF_FILES:
-        ingest_pdf(pdf)
+        ingest_pdf(pdf["path"], department=pdf["department"])
+
     print("🎉 Ingestion terminée")
+
 
 if __name__ == "__main__":
     main()

@@ -6,7 +6,22 @@ from app.nlp.intent_detector import detect_intent
 import time
 
 
-def filter_relevant_docs(documents, question):
+# ✅ MODIFICATION: filtre par liste de départements
+def filter_relevant_docs(documents, question, departments=None):
+    """Filtre strict par liste de départements"""
+
+    if departments:
+        docs_filtered = []
+        for doc in documents:
+            doc_dept = doc.get("department") if isinstance(doc, dict) else None
+            # ✅ accepte si le doc appartient à un des départements
+            if doc_dept is None or doc_dept in departments:
+                docs_filtered.append(doc)
+        documents = docs_filtered
+
+    if not documents:
+        return []
+
     question_words = [
         w for w in question.lower().split()
         if len(w) > 2
@@ -21,18 +36,17 @@ def filter_relevant_docs(documents, question):
 
     scored.sort(key=lambda x: x[0], reverse=True)
 
-    if not scored:
-        return []
-
     return [doc for _, doc in scored]
 
 
-def build_prompt(context_chunks, question, is_tunisian=False):
+# ✅ MODIFICATION: prompt avec liste de départements
+def build_prompt(context_chunks, question, is_tunisian=False, departments=None):
     context = "\n\n".join(context_chunks)
+    dept_info = f" des départements {', '.join(departments)}" if departments else ""
 
     if is_tunisian:
         return f"""
-You are an enterprise AI assistant.
+You are an enterprise AI assistant{dept_info}.
 
 IMPORTANT RULES:
 - Answer ONLY using the provided context.
@@ -53,7 +67,7 @@ ANSWER:
 """
     else:
         return f"""
-You are a strict enterprise AI assistant.
+You are a strict enterprise AI assistant{dept_info}.
 
 IMPORTANT RULES:
 - Answer ONLY using the provided context.
@@ -103,8 +117,8 @@ def quick_response(intent: str, original_question: str, is_tunisian: bool = Fals
 
     if intent == "capabilities":
         if is_tunisian:
-            return "Najem n3awnek fel as2la, nfassarlek ma3loumet, nlawwejlek fel documents, w njewbek 3la 7seb el mawjoud 3andi."
-        return "Je peux répondre à vos questions, rechercher dans les documents disponibles et vous aider à retrouver des informations utiles."
+            return "Najem n3awnek fel as2la, nfassarlek ma3loumet, nlawwejlek fel documents mta3 departments mte3ek."
+        return "Je peux répondre à vos questions et rechercher dans les documents de vos départements 😊"
 
     if intent == "casual_reply":
         if is_tunisian:
@@ -128,13 +142,15 @@ def is_weak_query(text: str) -> bool:
 
     words = text.lower().strip().split()
 
-    if len(words) <= 2 and all(w in weak_words or len(w) <= 3 for w in words):
-        return True
-
-    return False
+    return len(words) <= 2 and all(w in weak_words or len(w) <= 3 for w in words)
 
 
-def run_pipeline(question: str):
+# ✅ MODIFICATION: admin voit tous les documents
+def run_pipeline(question: str, departments: list = None, is_admin: bool = False):
+    # ✅ Admin voit tous les documents sans filtre
+    if is_admin:
+        departments = None
+
     question = question.strip()
     total_start = time.time()
 
@@ -144,6 +160,7 @@ def run_pipeline(question: str):
 
     print("\n===== DEBUG NLP =====")
     print("Question originale :", question)
+    print("Départements :", departments)
     print("Question normalisée :", normalized_question)
     print("Tunisian mode :", tunisian_mode)
     print("Intent détectée :", intent)
@@ -172,34 +189,27 @@ def run_pipeline(question: str):
 
     start = time.time()
     try:
-        documents = retrieve_documents(normalized_question, top_k=5)
+        documents = retrieve_documents(normalized_question, top_k=5, departments=departments)
     except TypeError:
         documents = retrieve_documents(normalized_question)
 
     print(f"📚 {len(documents)} documents récupérés")
     print("⏱ Retrieval:", round(time.time() - start, 2), "sec")
 
-    documents = filter_relevant_docs(documents, normalized_question)
+    documents = filter_relevant_docs(documents, normalized_question, departments)
 
-    print("\n===== DOCUMENTS UTILISÉS =====\n")
-    for doc in documents[:5]:
-        if isinstance(doc, dict):
-            print(doc["text"][:400])
-            print(f"\nSOURCE: {doc.get('source')} | PAGE: {doc.get('page')}")
-        else:
-            print(doc[:400])
-        print("\n-----------------\n")
+    print(f"✅ {len(documents)} documents après filtrage départements {departments}")
 
     if not documents:
         if tunisian_mode:
             return {
                 "question": question,
-                "answer": "Ma l9itech ma3louma pertinante fel documents eli 3andi.",
+                "answer": "Ma l9itech ma3louma pertinante fel documents mta3 departments mte3ek.",
                 "sources": []
             }
         return {
             "question": question,
-            "answer": "Je ne trouve pas d'information pertinente dans les documents.",
+            "answer": "Je ne trouve pas d'information pertinente dans les documents de vos départements.",
             "sources": []
         }
 
@@ -208,11 +218,13 @@ def run_pipeline(question: str):
         for doc in documents
     ][:3]
 
-    prompt = build_prompt(context_chunks, normalized_question, tunisian_mode)
+    prompt = build_prompt(context_chunks, normalized_question, tunisian_mode, departments)
+
     print(f"📝 Prompt envoyé ({len(prompt)} chars)")
 
     start = time.time()
     answer = generate_answer(prompt)
+
     print("⏱ LLM:", round(time.time() - start, 2), "sec")
     print("⏱ TOTAL:", round(time.time() - total_start, 2), "sec")
 
