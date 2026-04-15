@@ -48,7 +48,7 @@ def get_admin_user(authorization: str = Header(None), db: Session = Depends(get_
     return user
 
 
-# ─── STATS ───────────────────────────────────────
+# ─── STATS ──
 @router.get("/stats")
 def get_stats(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     return {
@@ -60,7 +60,7 @@ def get_stats(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     }
 
 
-# ─── USERS ───────────────────────────────────────
+# ─── USERS ──────
 @router.get("/users")
 def get_users(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     users = db.query(User).all()
@@ -132,7 +132,7 @@ def delete_user(user_id: int, admin=Depends(get_admin_user), db: Session = Depen
     return {"message": "Utilisateur supprimé"}
 
 
-# ─── DOCUMENTS ───────────────────────────────────
+# ─── DOCUMENTS ────
 @router.get("/documents")
 def get_documents(admin=Depends(get_admin_user)):
     from qdrant_client import QdrantClient
