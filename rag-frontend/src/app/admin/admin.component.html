@@ -18,9 +18,13 @@
         <button [class.active]="activeTab==='users'" (click)="activeTab='users'">
           <span>👥</span> Utilisateurs
         </button>
+          <button [class.active]="activeTab==='add'" (click)="activeTab='add'; searchEmployees()">
+          <span>➕</span> Ajouter employé
+        </button>
         <button [class.active]="activeTab==='docs'" (click)="activeTab='docs'">
           <span>📄</span> Documents
         </button>
+       
       </nav>
     </div>
 
@@ -47,6 +51,7 @@
         <h1 *ngIf="activeTab==='stats'">Tableau de bord</h1>
         <h1 *ngIf="activeTab==='users'">Gestion des utilisateurs</h1>
         <h1 *ngIf="activeTab==='docs'">Gestion des documents</h1>
+        <h1 *ngIf="activeTab==='add'">Ajouter un employé</h1>
         <p>Bienvenue, {{ adminUser.nom }} 👋</p>
       </div>
       <div class="header-badge">🔐 Admin</div>
@@ -114,10 +119,22 @@
 
     <!-- ══════════ USERS ══════════ -->
     <div *ngIf="activeTab==='users'" class="tab-content">
+
+      <!-- Header avec bouton ajouter -->
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Liste des utilisateurs</h2>
+          <p class="section-sub">Gérez les accès et les départements</p>
+        </div>
+        <button class="btn-create" (click)="openCreateModal()">
+          ＋ Nouvel utilisateur
+        </button>
+      </div>
+
       <div class="table-card">
         <div class="table-header">
-          <h3>Liste des utilisateurs</h3>
-          <span class="badge-count">{{ users.length }} utilisateurs</span>
+          <h3>{{ users.length }} utilisateurs enregistrés</h3>
+          <span class="badge-count">{{ users.length }} total</span>
         </div>
         <table class="data-table">
           <thead>
@@ -141,7 +158,9 @@
               <td><code>{{ user.cin }}</code></td>
               <td>{{ user.email }}</td>
               <td>
-                <span class="badge" [class.active]="user.is_active" [class.inactive]="!user.is_active">
+                <span class="badge"
+                      [class.active]="user.is_active"
+                      [class.inactive]="!user.is_active">
                   {{ user.is_active ? '✅ Actif' : '🚫 Inactif' }}
                 </span>
               </td>
@@ -150,37 +169,30 @@
                   {{ user.is_admin ? '👑 Admin' : '👤 User' }}
                 </span>
               </td>
-
-              <!-- ✅ COLONNE DEPARTEMENTS FIX -->
               <td>
-                <!-- ✅ Admin = tous les départements -->
-                <span *ngIf="user.is_admin" class="dept-all-badge">
+                <span class="dept-all-badge" *ngIf="user.is_admin">
                   🌐 Tous les départements
                 </span>
-
-                <!-- ✅ User normal -->
                 <div class="dept-manager" *ngIf="!user.is_admin">
                   <div class="dept-active-tags">
                     <span class="dept-active-tag" *ngFor="let d of user.departments">
                       {{ d }}
                       <span class="dept-remove"
-                            (click)="toggleDepartment(user, d, {target:{checked:false}})">×</span>
+                            (click)="toggleDepartment(user, d, false)">×</span>
                     </span>
-                    <span class="dept-empty" *ngIf="!user.departments?.length">Aucun</span>
+                    <span class="dept-empty" *ngIf="!user.departments.length">Aucun</span>
                   </div>
-
                   <div class="dept-dropdown">
                     <button class="dept-add-btn" (click)="user.showDepts = !user.showDepts">
                       + Ajouter
                     </button>
                     <div class="dept-dropdown-menu" *ngIf="user.showDepts">
                       <label *ngFor="let dept of allDepartments" class="dept-option"
-                             [class.selected]="user.departments?.includes(dept)"
-                             (click)="toggleDepartment(user, dept,
-                             {target:{checked: !user.departments?.includes(dept)}});
-                             user.showDepts=false">
+                             [class.selected]="user.departments.includes(dept)"
+                             (click)="toggleDepartment(user, dept, !user.departments.includes(dept));
+                                      user.showDepts=false">
                         <span class="dept-check-icon">
-                          {{ user.departments?.includes(dept) ? '✅' : '○' }}
+                          {{ user.departments.includes(dept) ? '✅' : '○' }}
                         </span>
                         {{ dept }}
                       </label>
@@ -188,8 +200,8 @@
                   </div>
                 </div>
               </td>
-
               <td class="actions">
+                <button class="btn-edit" (click)="openEditModal(user)">✏️ Éditer</button>
                 <button class="btn-toggle" (click)="toggleUser(user)"
                         [class.deactivate]="user.is_active">
                   {{ user.is_active ? 'Désactiver' : 'Activer' }}
@@ -203,12 +215,112 @@
           </tbody>
         </table>
       </div>
+
+    </div>
+
+    <!-- ══ MODAL ÉDITION ══ -->
+    <div class="modal-overlay" *ngIf="showEditModal" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>✏️ Modifier l'utilisateur</h3>
+          <button class="modal-close" (click)="closeModals()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-field">
+            <label>Nom</label>
+            <input type="text" [(ngModel)]="editForm.nom" placeholder="Nom"/>
+          </div>
+          <div class="modal-field">
+            <label>Prénom</label>
+            <input type="text" [(ngModel)]="editForm.prenom" placeholder="Prénom"/>
+          </div>
+          <div class="modal-field">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="editForm.email" placeholder="Email"/>
+          </div>
+          <div class="modal-field">
+            <label>Départements</label>
+            <div class="modal-depts">
+              <label *ngFor="let dept of allDepartments" class="dept-check-modal"
+                     [class.selected]="editForm.departments.includes(dept)"
+                     (click)="toggleEditDept(dept)">
+                <span>{{ editForm.departments.includes(dept) ? '✅' : '○' }}</span>
+                {{ dept }}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <div class="modal-error" *ngIf="modalError">❌ {{ modalError }}</div>
+          <button class="btn-cancel" (click)="closeModals()">Annuler</button>
+          <button class="btn-save" (click)="saveEdit()" [disabled]="modalLoading">
+            <span *ngIf="!modalLoading">💾 Enregistrer</span>
+            <span *ngIf="modalLoading">⏳</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MODAL CRÉATION ══ -->
+    <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>➕ Nouvel utilisateur</h3>
+          <button class="modal-close" (click)="closeModals()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-row">
+            <div class="modal-field">
+              <label>Nom *</label>
+              <input type="text" [(ngModel)]="createForm.nom" placeholder="Nom de famille"/>
+            </div>
+            <div class="modal-field">
+              <label>Prénom *</label>
+              <input type="text" [(ngModel)]="createForm.prenom" placeholder="Prénom"/>
+            </div>
+          </div>
+          <div class="modal-field">
+            <label>CIN *</label>
+            <input type="text" [(ngModel)]="createForm.cin" placeholder="Numéro CIN"/>
+          </div>
+          <div class="modal-field">
+            <label>Email *</label>
+            <input type="email" [(ngModel)]="createForm.email" placeholder="email@example.com"/>
+          </div>
+          <div class="modal-field">
+            <label>Départements</label>
+            <div class="modal-depts">
+              <label *ngFor="let dept of allDepartments" class="dept-check-modal"
+                     [class.selected]="createForm.departments.includes(dept)"
+                     (click)="toggleCreateDept(dept)">
+                <span>{{ createForm.departments.includes(dept) ? '✅' : '○' }}</span>
+                {{ dept }}
+              </label>
+            </div>
+          </div>
+          <p class="modal-note">
+            📧 Un mot de passe sera généré automatiquement et envoyé par email
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <div class="modal-error"   *ngIf="modalError">❌ {{ modalError }}</div>
+          <div class="modal-success" *ngIf="modalSuccess">✅ {{ modalSuccess }}</div>
+          <button class="btn-cancel" (click)="closeModals()">Annuler</button>
+          <button class="btn-save"   (click)="saveCreate()" [disabled]="modalLoading">
+            <span *ngIf="!modalLoading">➕ Créer & Envoyer email</span>
+            <span *ngIf="modalLoading">⏳ Création...</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════ DOCUMENTS ══════════ -->
     <div *ngIf="activeTab==='docs'" class="tab-content">
 
-      <!-- Liste documents -->
       <div class="table-card" style="margin-bottom: 24px;">
         <div class="table-header">
           <h3>📚 Documents indexés</h3>
@@ -240,7 +352,6 @@
         </table>
       </div>
 
-      <!-- Upload -->
       <div class="upload-card">
         <div class="upload-icon">📄</div>
         <h3>Importer un document PDF</h3>
@@ -276,6 +387,132 @@
 
         <div class="alert-success" *ngIf="uploadMessage">✅ {{ uploadMessage }}</div>
         <div class="alert-error"   *ngIf="uploadError">❌ {{ uploadError }}</div>
+      </div>
+
+    </div>
+
+    <!-- ══════════ AJOUTER EMPLOYÉ ══════════ -->
+    <div *ngIf="activeTab==='add'" class="tab-content">
+
+      <!-- Import CSV -->
+      <div class="import-bar">
+        <div class="import-info">
+          <span>📋</span>
+          <div>
+            <strong>Importer depuis CSV</strong>
+            <p>Format : nom, prenom, cin, email, matricule, num_poste, unit_label, subsidiary_label</p>
+          </div>
+        </div>
+        <div class="import-actions">
+          <input type="file" accept=".csv" (change)="onCsvSelected($event)" id="csvInput" style="display:none"/>
+          <label for="csvInput" class="btn-import">
+            📁 Choisir CSV
+          </label>
+          <button class="btn-import-do" *ngIf="selectedCsv"
+                  (click)="importCsv()" [disabled]="importingCsv">
+            {{ importingCsv ? '⏳ Import...' : '⬆️ Importer' }}
+          </button>
+          <span class="csv-name" *ngIf="selectedCsv">{{ selectedCsv.name }}</span>
+        </div>
+      </div>
+
+      <div class="alert-success" *ngIf="importSuccess" style="margin-bottom:16px;">
+        ✅ {{ importSuccess }}
+      </div>
+
+      <!-- Barre de recherche -->
+      <div class="search-section">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input type="text"
+                 [(ngModel)]="searchQuery"
+                 (ngModelChange)="searchEmployees()"
+                 placeholder="Rechercher par nom, prénom, CIN, email..."/>
+          <span class="search-clear" *ngIf="searchQuery" (click)="clearSearch()">✕</span>
+        </div>
+        <p class="search-hint" *ngIf="searchQuery">
+          {{ employeeResults.length }} résultat(s) pour "{{ searchQuery }}"
+        </p>
+      </div>
+
+      <!-- TABLE SANS DÉPARTEMENT NI FILIALE -->
+      <div class="table-card" *ngIf="employeeResults.length > 0">
+        <div class="table-header">
+          <h3>Résultats de recherche</h3>
+          <span class="badge-count">{{ employeeResults.length }} employés</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Prénom</th>
+              <th>CIN</th>
+              <th>Email</th>
+              <th>Statut</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let emp of employeeResults"
+                [class.already-registered]="emp.is_registered">
+              <td><strong>{{ emp.nom }}</strong></td>
+              <td>{{ emp.prenom }}</td>
+              <td><code>{{ emp.cin }}</code></td>
+              <td>{{ emp.email }}</td>
+              <td>
+                <span class="badge"
+                      [class.active]="!emp.is_registered"
+                      [class.inactive]="emp.is_registered">
+                  {{ emp.is_registered ? '✅ Inscrit' : '🆕 Nouveau' }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-add-emp"
+                        [disabled]="emp.is_registered || addingEmployee === emp.cin"
+                        (click)="addEmployee(emp)">
+                  <span *ngIf="addingEmployee !== emp.cin">
+                    {{ emp.is_registered ? 'Déjà inscrit' : '+ Ajouter' }}
+                  </span>
+                  <span *ngIf="addingEmployee === emp.cin">⏳</span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- NOTE INFORMATIVE -->
+        <div style="padding: 12px 20px; background: #f0f9ff; border-top: 1px solid #e0f2fe;
+                    border-radius: 0 0 12px 12px; font-size: 13px; color: #0369a1;">
+          ℹ️ Le département sera assigné manuellement depuis l'onglet <strong>Utilisateurs</strong> après l'ajout.
+        </div>
+      </div>
+
+      <!-- Vide -->
+      <div class="empty-state"
+           *ngIf="employeeResults.length === 0 && searchQuery">
+        <div class="empty-icon">🔍</div>
+        <p>Aucun employé trouvé pour "{{ searchQuery }}"</p>
+        <p style="font-size:13px; margin-top:8px; color:#94a3b8;">
+          Vérifiez que les employés sont importés dans la base de données
+        </p>
+      </div>
+
+      <div class="empty-state"
+           *ngIf="employeeResults.length === 0 && !searchQuery">
+        <div class="empty-icon">👥</div>
+        <p>Importez d'abord un fichier CSV ou recherchez un employé</p>
+      </div>
+
+      <!-- Alertes -->
+      <div class="alert-success" *ngIf="addSuccess" style="margin-top:20px;">
+        ✅ {{ addSuccess }}
+      </div>
+      <div class="alert-error" *ngIf="addError" style="margin-top:20px;">
+        ❌ {{ addError }}
       </div>
 
     </div>

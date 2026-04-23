@@ -21,14 +21,21 @@ def get_db():
         db.close()
 
 
-# ✅ MODIFICATION: ajout departments + is_admin dans le token
-def create_token(user_id: int, cin: str, departments: list = None, is_admin: bool = False) -> str:
+# ✅ MODIFICATION: ajout nom dans le token
+def create_token(
+    user_id: int,
+    cin: str,
+    departments: list = None,
+    is_admin: bool = False,
+    nom: str = ""
+) -> str:
     expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     payload = {
         "sub":         str(user_id),
         "cin":         cin,
         "departments": departments or [],
         "is_admin":    is_admin,
+        "nom":         nom,
         "exp":         expire
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -86,8 +93,14 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
 
     departments = user.get_departments_list()
 
-    # ✅ token avec is_admin
-    token = create_token(user.id, user.cin, departments, user.is_admin)
+    # ✅ token avec nom
+    token = create_token(
+        user.id,
+        user.cin,
+        departments,
+        user.is_admin,
+        f"{user.nom} {user.prenom or ''}".strip()
+    )
 
     return {
         "access_token": token,
@@ -126,8 +139,14 @@ def admin_login(credentials: UserLogin, db: Session = Depends(get_db)):
 
     departments = user.get_departments_list()
 
-    # ✅ token avec is_admin
-    token = create_token(user.id, user.cin, departments, user.is_admin)
+    # ✅ token avec nom
+    token = create_token(
+        user.id,
+        user.cin,
+        departments,
+        user.is_admin,
+        f"{user.nom} {user.prenom or ''}".strip()
+    )
 
     return {
         "access_token": token,

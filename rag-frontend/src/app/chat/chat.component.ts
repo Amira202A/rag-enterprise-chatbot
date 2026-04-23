@@ -35,6 +35,9 @@ export class ChatComponent implements OnInit, OnDestroy {
   isTyping = false;
   selectedLanguage = 'en-US';
 
+  // ✅ NOUVEAU : infos utilisateur
+  currentUser: any = {};
+
   private recognition: any = null;
   isListening = false;
   private finalTranscript = '';
@@ -62,9 +65,17 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+
+    // ✅ Charger user depuis localStorage
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      this.currentUser = JSON.parse(userStr);
+    }
+
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
     }
+
     this.loadConversations();
   }
 
@@ -96,6 +107,7 @@ export class ChatComponent implements OnInit, OnDestroy {
 
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // ✅ important
     this.router.navigate(['/login']);
   }
 

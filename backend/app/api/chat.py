@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Header
+from fastapi import APIRouter, Body, Header, HTTPException
 from pydantic import BaseModel
 from datetime import datetime
 from bson import ObjectId
@@ -22,10 +22,10 @@ class ChatRequest(BaseModel):
     conversation_id: str
 
 
-# ✅ NOUVEAU: récupérer user + departments + is_admin depuis token
+# ✅ récupérer user + departments + is_admin + nom depuis token
 def get_user_from_token(authorization: str = None) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
-        return {"id": None, "departments": [], "is_admin": False}
+        return {"id": None, "departments": [], "is_admin": False, "nom": ""}
 
     token = authorization.replace("Bearer ", "")
 
@@ -34,10 +34,11 @@ def get_user_from_token(authorization: str = None) -> dict:
         return {
             "id":          payload.get("sub"),
             "departments": payload.get("departments", []),
-            "is_admin":    payload.get("is_admin", False)
+            "is_admin":    payload.get("is_admin", False),
+            "nom":         payload.get("nom", "")
         }
     except:
-        return {"id": None, "departments": [], "is_admin": False}
+        return {"id": None, "departments": [], "is_admin": False, "nom": ""}
 
 
 # 🔹 TEST EMBEDDING
@@ -77,10 +78,11 @@ async def chat(
     is_admin    = user_info.get("is_admin", False)
 
     # ✅ pipeline avec departments + is_admin
-    result = run_pipeline(request.question, departments=departments, is_admin=is_admin)
-
-    print("\n===== DEBUG RESULT =====")
-    print(result)
+    result = run_pipeline(
+        request.question,
+        departments=departments,
+        is_admin=is_admin
+    )
 
     duration = round(time.time() - start, 2)
 
@@ -89,10 +91,6 @@ async def chat(
         answer = result.get("answer", "")
     else:
         answer = str(result)
-
-    print("===== DEBUG ANSWER =====")
-    print(answer)
-    print("========================\n")
 
     # 🔹 conversion conversation_id
     conversation_id = ObjectId(request.conversation_id)
@@ -115,7 +113,7 @@ async def chat(
         {"$push": {"messages": inserted.inserted_id}}
     )
 
-    # 🔹 mettre à jour le titre si c'est une nouvelle conversation
+    # 🔹 mettre à jour le titre si nouvelle conversation
     conversations_collection.update_one(
         {"_id": conversation_id, "title": "Nouvelle conversation"},
         {"$set": {"title": request.question[:40]}}

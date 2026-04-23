@@ -11,12 +11,13 @@ from pypdf import PdfReader
 import io
 import os
 import asyncio
-from pydantic import BaseModel as PydanticBase
-from typing import List
+from pydantic import BaseModel as PydanticBase, EmailStr
+from typing import List, Optional
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
+# ─────────────── MODELS ───────────────
 class DepartmentUpdate(PydanticBase):
     department: str
 
@@ -25,6 +26,25 @@ class DepartmentsUpdate(PydanticBase):
     departments: List[str]
 
 
+# ✅ NEW
+class UserUpdate(PydanticBase):
+    nom:         Optional[str] = None
+    prenom:      Optional[str] = None
+    email:       Optional[str] = None
+    departments: Optional[List[str]] = None
+    is_active:   Optional[bool] = None
+
+
+# ✅ NEW
+class UserCreate(PydanticBase):
+    nom:         str
+    prenom:      str
+    cin:         str
+    email:       str
+    departments: Optional[List[str]] = None
+
+
+# ─────────────── DB ───────────────
 def get_db():
     db = SessionLocal()
     try:
@@ -33,6 +53,7 @@ def get_db():
         db.close()
 
 
+# ─────────────── AUTH ───────────────
 def get_admin_user(authorization: str = Header(None), db: Session = Depends(get_db)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant")
@@ -42,13 +63,15 @@ def get_admin_user(authorization: str = Header(None), db: Session = Depends(get_
         user_id = int(payload.get("sub"))
     except:
         raise HTTPException(status_code=401, detail="Token invalide")
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_admin:
         raise HTTPException(status_code=403, detail="Accès admin requis")
+
     return user
 
 
-# ─── STATS ──
+# ─────────────── STATS ───────────────
 @router.get("/stats")
 def get_stats(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     return {
@@ -60,7 +83,7 @@ def get_stats(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     }
 
 
-# ─── USERS ──────
+# ─────────────── USERS ───────────────
 @router.get("/users")
 def get_users(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     users = db.query(User).all()
@@ -80,13 +103,105 @@ def get_users(admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     ]
 
 
+@router.put("/users/{user_id}")
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    admin=Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+    if data.nom is not None:
+        user.nom = data.nom
+    if data.prenom is not None:
+        user.prenom = data.prenom
+    if data.is_active is not None:
+        user.is_active = data.is_active
+
+    if data.email is not None:
+        existing = db.query(User).filter(
+            User.email == data.email,
+            User.id != user_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email déjà utilisé")
+        user.email = data.email
+
+    if data.departments is not None:
+        user.set_departments_list(data.departments)
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "✅ Utilisateur mis à jour",
+        "id": user.id,
+        "nom": user.nom,
+        "prenom": user.prenom,
+        "email": user.email,
+        "departments": user.get_departments_list()
+    }
+
+
+@router.post("/users/create")
+def create_user_manual(
+    data: UserCreate,
+    admin=Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    import bcrypt
+    from app.services.email_service import generate_password, send_password_email
+
+    if db.query(User).filter(User.cin == data.cin).first():
+        raise HTTPException(status_code=400, detail="CIN déjà enregistré")
+
+    if db.query(User).filter(User.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Email déjà utilisé")
+
+    raw_password = generate_password()
+    hashed = bcrypt.hashpw(raw_password.encode(), bcrypt.gensalt()).decode()
+
+    new_user = User(
+        nom=data.nom,
+        prenom=data.prenom,
+        cin=data.cin,
+        email=data.email,
+        password=hashed,
+        is_active=True,
+        is_admin=False
+    )
+
+    if data.departments:
+        new_user.set_departments_list(data.departments)
+
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    sent = send_password_email(data.email, data.nom, raw_password)
+    if not sent:
+        db.delete(new_user)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Erreur envoi email")
+
+    return {
+        "message": f"✅ {data.nom} {data.prenom} créé — email envoyé",
+        "user_id": new_user.id
+    }
+
+
 @router.put("/users/{user_id}/toggle")
 def toggle_user(user_id: int, admin=Depends(get_admin_user), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
     user.is_active = not user.is_active
     db.commit()
+
     return {"is_active": user.is_active}
 
 
@@ -95,8 +210,10 @@ def update_department(user_id: int, data: DepartmentUpdate, admin=Depends(get_ad
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
     user.department = data.department
     db.commit()
+
     return {"message": f"Département mis à jour → {data.department}"}
 
 
@@ -125,14 +242,17 @@ def delete_user(user_id: int, admin=Depends(get_admin_user), db: Session = Depen
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
     if user.is_admin:
         raise HTTPException(status_code=400, detail="Impossible de supprimer un admin")
+
     db.delete(user)
     db.commit()
+
     return {"message": "Utilisateur supprimé"}
 
 
-# ─── DOCUMENTS ────
+# ─────────────── DOCUMENTS ───────────────
 @router.get("/documents")
 def get_documents(admin=Depends(get_admin_user)):
     from qdrant_client import QdrantClient

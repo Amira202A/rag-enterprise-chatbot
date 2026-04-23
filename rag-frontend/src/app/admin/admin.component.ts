@@ -17,23 +17,51 @@ export class AdminComponent implements OnInit {
   stats: any = {};
   users: any[] = [];
   documents: any[] = [];
+
   uploadMessage = '';
   uploadError   = '';
   uploading     = false;
   selectedFile: File | null = null;
-  adminUser: any = {};
 
+  adminUser: any = {};
   uploadDepartment = 'IT';
 
-  // ✅ LISTE DES DÉPARTEMENTS
-  allDepartments = ['IT', 'RH', 'Marketing', 'Finance', 'Direction',"Général"];
+  allDepartments = ['IT', 'RH', 'Marketing', 'Finance', 'Direction', 'Général'];
 
-  // ✅ K-Means simplifié
-  nClusters        = 10;
-  kmeansStatus     = 'Vérification...';
-  kmeansActive     = false;
-  kmeansNClusters  = 0;
-  clusterStats: any[] = [];
+  // ── KMeans ──
+  nClusters = 10;
+  kmeansActive = false;
+  kmeansNClusters = 0;
+
+  // ── Recherche employés ──
+  searchQuery = '';
+  employeeResults: any[] = [];
+  addingEmployee = '';
+  addSuccess = '';
+  addError = '';
+
+  // ── Import CSV ──
+  selectedCsv: File | null = null;
+  importingCsv = false;
+  importSuccess = '';
+
+  // ───────── MODALS ─────────
+  showEditModal   = false;
+  showCreateModal = false;
+  modalLoading    = false;
+  modalError      = '';
+  modalSuccess    = '';
+  selectedUserId  = 0;
+
+  editForm = {
+    nom: '', prenom: '', email: '',
+    departments: [] as string[]
+  };
+
+  createForm = {
+    nom: '', prenom: '', cin: '', email: '',
+    departments: [] as string[]
+  };
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -50,6 +78,8 @@ export class AdminComponent implements OnInit {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
+  // ───────── LOAD DATA ─────────
+
   loadStats() {
     this.http.get<any>('http://localhost:8000/admin/stats', {
       headers: this.getHeaders()
@@ -59,12 +89,12 @@ export class AdminComponent implements OnInit {
   loadUsers() {
     this.http.get<any[]>('http://localhost:8000/admin/users', {
       headers: this.getHeaders()
-    }).subscribe({ 
+    }).subscribe({
       next: (data) => {
-        // ✅ sécurité : toujours avoir un tableau
         this.users = data.map(u => ({
           ...u,
-          departments: u.departments || []
+          departments: u.departments || [],
+          showDepts: false
         }));
       }
     });
@@ -74,68 +104,168 @@ export class AdminComponent implements OnInit {
     this.http.get<any[]>('http://localhost:8000/admin/documents', {
       headers: this.getHeaders()
     }).subscribe({
-      next: (data) => {
-        this.documents = data;
-
-        const totalChunks = data.reduce((sum, d) => sum + d.chunks, 0);
-
-        if      (totalChunks < 500)  this.nClusters = 5;
-        else if (totalChunks < 2000) this.nClusters = 10;
-        else if (totalChunks < 5000) this.nClusters = 20;
-        else                         this.nClusters = 30;
-
-        console.log(`💡 Suggestion: ${this.nClusters} clusters pour ${totalChunks} chunks`);
-      },
-      error: (err) => console.error('Erreur documents:', err)
+      next: (data) => this.documents = data
     });
   }
+
+  // ───────── USERS ─────────
 
   toggleUser(user: any) {
     this.http.put<any>(`http://localhost:8000/admin/users/${user.id}/toggle`, {}, {
       headers: this.getHeaders()
     }).subscribe({
-      next: (res) => {
-        user.is_active = res.is_active;
-      }
+      next: (res) => user.is_active = res.is_active
     });
   }
 
   deleteUser(user: any) {
     if (!confirm(`Supprimer ${user.nom} ?`)) return;
+
     this.http.delete(`http://localhost:8000/admin/users/${user.id}`, {
       headers: this.getHeaders()
     }).subscribe({
-      next: () => {
-        this.users = this.users.filter(u => u.id !== user.id);
-      }
+      next: () => this.users = this.users.filter(u => u.id !== user.id)
     });
   }
 
-  // ❌ ANCIEN (single department) — supprimé
-  // updateDepartment(...) {}
-
-  // ✅ NOUVEAU: gestion multi-départements
-  toggleDepartment(user: any, dept: string, event: any) {
+  // ✅ FIX IMPORTANT (plus d’event fake)
+  toggleDepartment(user: any, dept: string, checked: boolean) {
     if (!user.departments) user.departments = [];
 
-    if (event.target.checked) {
-      // ➕ Ajouter
+    if (checked) {
       if (!user.departments.includes(dept)) {
         user.departments.push(dept);
       }
     } else {
-      // ➖ Supprimer
       user.departments = user.departments.filter((d: string) => d !== dept);
     }
 
-    // ✅ Sync backend
     this.http.put(
       `http://localhost:8000/admin/users/${user.id}/departments`,
       { departments: user.departments },
       { headers: this.getHeaders() }
+    ).subscribe();
+  }
+
+  // ✅ FIX dropdown propre
+  toggleDeptDropdown(user: any) {
+    this.users.forEach(u => u.showDepts = false);
+    user.showDepts = !user.showDepts;
+  }
+
+  // ───────── MODALS ─────────
+
+  openEditModal(user: any) {
+    this.selectedUserId = user.id;
+
+    this.editForm = {
+      nom: user.nom || '',
+      prenom: user.prenom || '',
+      email: user.email || '',
+      departments: [...(user.departments || [])]
+    };
+
+    this.modalError = '';
+    this.modalSuccess = '';
+    this.showEditModal = true;
+  }
+
+  openCreateModal() {
+    this.createForm = {
+      nom: '', prenom: '', cin: '', email: '',
+      departments: []
+    };
+
+    this.modalError = '';
+    this.modalSuccess = '';
+    this.showCreateModal = true;
+  }
+
+  closeModals() {
+    this.showEditModal = false;
+    this.showCreateModal = false;
+    this.modalError = '';
+    this.modalSuccess = '';
+  }
+
+  toggleEditDept(dept: string) {
+    const i = this.editForm.departments.indexOf(dept);
+    i >= 0
+      ? this.editForm.departments.splice(i, 1)
+      : this.editForm.departments.push(dept);
+  }
+
+  toggleCreateDept(dept: string) {
+    const i = this.createForm.departments.indexOf(dept);
+    i >= 0
+      ? this.createForm.departments.splice(i, 1)
+      : this.createForm.departments.push(dept);
+  }
+
+  saveEdit() {
+    this.modalLoading = true;
+    this.modalError = '';
+
+    this.http.put<any>(
+      `http://localhost:8000/admin/users/${this.selectedUserId}`,
+      this.editForm,
+      { headers: this.getHeaders() }
     ).subscribe({
-      next: () => console.log(`✅ Départements mis à jour pour ${user.nom}`),
-      error: (err) => console.error('Erreur:', err)
+      next: (res) => {
+        this.modalLoading = false;
+        this.modalSuccess = res.message;
+        this.loadUsers();
+        setTimeout(() => this.closeModals(), 1500);
+      },
+      error: (err) => {
+        this.modalLoading = false;
+        this.modalError = err.error?.detail || 'Erreur modification';
+      }
+    });
+  }
+
+  saveCreate() {
+    this.modalLoading = true;
+    this.modalError = '';
+
+    if (!this.createForm.nom || !this.createForm.prenom ||
+        !this.createForm.cin || !this.createForm.email) {
+      this.modalError = 'Tous les champs sont obligatoires';
+      this.modalLoading = false;
+      return;
+    }
+
+    this.http.post<any>(
+      'http://localhost:8000/admin/users/create',
+      this.createForm,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        this.modalLoading = false;
+        this.modalSuccess = res.message;
+        this.loadUsers();
+        setTimeout(() => this.closeModals(), 2000);
+      },
+      error: (err) => {
+        this.modalLoading = false;
+        this.modalError = err.error?.detail || 'Erreur création';
+      }
+    });
+  }
+
+  // ───────── AUTRES ─────────
+
+  logout() {
+    localStorage.clear();
+    this.router.navigate(['/login']);
+  }
+
+  checkKmeansStatus() {
+    this.http.get<any>('http://localhost:8000/clustering/status', {
+      headers: this.getHeaders()
+    }).subscribe(res => {
+      this.kmeansActive = res.trained;
+      this.kmeansNClusters = res.n_clusters || 0;
     });
   }
 
@@ -145,60 +275,89 @@ export class AdminComponent implements OnInit {
 
   uploadPDF() {
     if (!this.selectedFile) return;
-    this.uploading     = true;
-    this.uploadMessage = '';
-    this.uploadError   = '';
 
     const formData = new FormData();
     formData.append('file', this.selectedFile);
     formData.append('department', this.uploadDepartment);
 
-    this.http.post<any>('http://localhost:8000/admin/upload-pdf', formData, {
-      headers: new HttpHeaders({
-        Authorization: `Bearer ${localStorage.getItem('admin_token') || ''}`
-      })
-    }).subscribe({
-      next: (res) => {
-        this.uploading     = false;
-        this.uploadMessage = res.message;
-        this.selectedFile  = null;
-        this.loadDocuments();
-      },
-      error: (err) => {
-        this.uploading   = false;
-        this.uploadError = err.error?.detail || 'Erreur upload';
-      }
-    });
-  }
+    this.uploading = true;
 
-  checkKmeansStatus() {
-    this.http.get<any>('http://localhost:8000/clustering/status', {
+    this.http.post<any>('http://localhost:8000/admin/upload-pdf', formData, {
       headers: this.getHeaders()
     }).subscribe({
-      next: (res) => {
-        this.kmeansActive    = res.trained;
-        this.kmeansNClusters = res.n_clusters || 0;
-      }
+      next: () => {
+        this.uploading = false;
+        this.selectedFile = null;
+        this.loadDocuments();
+      },
+      error: () => this.uploading = false
     });
   }
 
   deleteDocument(source: string) {
     if (!confirm(`Supprimer "${source}" ?`)) return;
-    this.http.delete(`http://localhost:8000/admin/documents/${encodeURIComponent(source)}`, {
+
+    this.http.delete(
+      `http://localhost:8000/admin/documents/${encodeURIComponent(source)}`,
+      { headers: this.getHeaders() }
+    ).subscribe(() => this.loadDocuments());
+  }
+
+  // ───────── EMPLOYEES ─────────
+
+  searchEmployees() {
+    const q = encodeURIComponent(this.searchQuery);
+
+    this.http.get<any[]>(
+      `http://localhost:8000/employees/search?q=${q}`,
+      { headers: this.getHeaders() }
+    ).subscribe(data => this.employeeResults = data);
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.employeeResults = [];
+  }
+
+  addEmployee(emp: any) {
+    this.addingEmployee = emp.cin;
+
+    this.http.post<any>('http://localhost:8000/employees/add', emp, {
       headers: this.getHeaders()
     }).subscribe({
-      next: () => {
-        this.loadDocuments();
+      next: (res) => {
+        this.addingEmployee = '';
+        this.addSuccess = res.message;
+        this.loadUsers();
       },
-      error: (err) => console.error('Erreur suppression:', err)
+      error: () => this.addingEmployee = ''
     });
   }
 
-  logout() {
-    localStorage.removeItem('admin_token');
-    localStorage.removeItem('admin_user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this.router.navigate(['/login']);
+  onCsvSelected(event: any) {
+    this.selectedCsv = event.target.files[0];
   }
+
+  importCsv() {
+    if (!this.selectedCsv) return;
+
+    const formData = new FormData();
+    formData.append('file', this.selectedCsv);
+
+    this.importingCsv = true;
+
+    this.http.post<any>(
+      'http://localhost:8000/employees/import-csv',
+      formData,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (res) => {
+        this.importingCsv = false;
+        this.importSuccess = res.message;
+        this.searchEmployees();
+      },
+      error: () => this.importingCsv = false
+    });
+  }
+
 }

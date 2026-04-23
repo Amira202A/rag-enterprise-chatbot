@@ -16,7 +16,7 @@ def send_password_email(to_email: str, nom: str, password: str) -> bool:
     """Envoie le mot de passe par email via Gmail SMTP."""
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = "PGH SmartBot — Votre mot de passe"
+        msg["Subject"] = "PGH Brain — Votre mot de passe"
         msg["From"]    = MAIL_FROM
         msg["To"]      = to_email
 

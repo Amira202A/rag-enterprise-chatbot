@@ -8,8 +8,10 @@ from app.api.conversation import router as conversation_router
 from app.api.auth import router as auth_router
 from app.api.admin import router as admin_router
 from app.api.clustering_api import router as clustering_router  # ✅ AJOUTÉ
+from app.api.employees import router as employees_router  # ✅ AJOUTÉ
 from app.database.sql import engine, Base
 from app.models.user import User  # nécessaire pour créer la table
+from app.models.employee import Employee  # ✅ AJOUTÉ
 
 app = FastAPI(
     title="RAG Enterprise Chatbot",
@@ -52,6 +54,7 @@ app.include_router(conversation_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(clustering_router)  # ✅ AJOUTÉ
+app.include_router(employees_router)  # ✅ AJOUTÉ
 
 @app.get("/")
 def root():

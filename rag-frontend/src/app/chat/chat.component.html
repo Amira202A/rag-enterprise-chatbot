@@ -39,8 +39,9 @@
   <!-- MAIN CHAT -->
   <main class="chat-area">
 
-    <!-- HEADER -->
+    <!-- HEADER MODIFIÉ -->
     <div class="chat-header">
+
       <div class="chat-title">
         <h3>{{ currentConversation?.title || 'Nouvelle conversation' }}</h3>
         <span class="status">
@@ -48,6 +49,36 @@
           En ligne
         </span>
       </div>
+
+      <!-- ✅ Infos utilisateur -->
+      <div class="user-info-header">
+        <div class="user-avatar-small">
+          {{ currentUser?.nom?.charAt(0) }}
+        </div>
+
+        <div class="user-details">
+          <span class="user-name">
+            {{ currentUser?.nom }}
+          </span>
+
+          <div class="user-depts">
+            <span
+              class="dept-chip"
+              *ngFor="let d of currentUser?.departments"
+            >
+              {{ d }}
+            </span>
+
+            <span
+              class="dept-chip admin-chip"
+              *ngIf="currentUser?.is_admin"
+            >
+              👑 Admin
+            </span>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- MESSAGES -->
@@ -56,7 +87,7 @@
       <!-- Message de bienvenue -->
       <div *ngIf="!activeConversationId" class="welcome-screen">
         <div class="welcome-icon">🤖</div>
-        <h2>Bonjour, bienvenue sur PGH SmartBot</h2>
+        <h2>Bonjour, bienvenue sur PGH Brain</h2>
         <p>Sélectionnez une conversation ou créez-en une nouvelle pour commencer.</p>
       </div>
 
@@ -87,7 +118,7 @@
           <div class="typing-dots">
             <span></span><span></span><span></span>
           </div>
-          <span class="typing-text">PGH SmartBot écrit...</span>
+          <span class="typing-text">PGH Brain écrit...</span>
         </div>
       </div>
 
@@ -96,7 +127,7 @@
     <!-- INPUT AREA -->
     <div class="chat-input">
 
-      <!-- Waveform au-dessus de l'input -->
+      <!-- Waveform -->
       <div class="waveform-bar" *ngIf="isListening">
         <span
           *ngFor="let h of waveformBars"
@@ -115,20 +146,17 @@
             (keyup.enter)="onEnterKey()"
             [class.listening-input]="isListening"
           />
-          <!-- Vagues dans l'input -->
           <div class="voice-waves" *ngIf="isListening">
             <span></span><span></span><span></span><span></span><span></span>
           </div>
         </div>
 
-        <!-- Langue -->
         <select [(ngModel)]="selectedLanguage" class="language-select">
           <option value="en-US">🇬🇧 English</option>
           <option value="fr-FR">🇫🇷 Français</option>
           <option value="ar-SA">🇸🇦 العربية</option>
         </select>
 
-        <!-- Micro -->
         <div class="mic-wrapper">
           <span class="rec-dot" *ngIf="isListening"></span>
           <button
@@ -139,7 +167,6 @@
           >🎙️</button>
         </div>
 
-        <!-- Envoyer -->
         <button
           (click)="sendMessage()"
           class="send-button"
