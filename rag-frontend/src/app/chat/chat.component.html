@@ -1,182 +1,251 @@
 <div class="app-container">
 
-  <!-- SIDEBAR -->
+  <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">
-        <div class="logo-icon">PGH</div>
-        <div class="logo-text">
-          <span class="brand">PGH</span>
-          <span class="product">Brain</span>
+
+    <div class="sidebar-logo">
+      <div class="logo-box">
+        <img src="assets/logo.png" alt="PGH"/>
+      </div>
+      <div class="logo-info">
+        <h2>PGH Brain</h2>
+        <span>Votre assistant intelligent</span>
+      </div>
+    </div>
+
+    <button class="new-chat-btn" (click)="createNewConversation()">
+      ＋ Nouvelle conversation
+    </button>
+
+    <!-- Search -->
+    <div class="search-box">
+      <input type="text"
+             [(ngModel)]="searchHistory"
+             placeholder="🔍 Rechercher une conversation..."
+             class="search-input"/>
+    </div>
+
+    <!-- History -->
+    <div class="history">
+      <h4>Historique</h4>
+      <div *ngFor="let conv of filteredConversations"
+           class="history-item"
+           [class.active]="conv.id === activeConversationId"
+           (click)="selectConversation(conv.id)">
+        <span class="history-icon">💬</span>
+        <span class="history-title">{{ conv.title }}</span>
+      </div>
+      <div *ngIf="filteredConversations.length === 0 && searchHistory"
+           class="history-empty">
+        Aucun résultat pour "{{ searchHistory }}"
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <button class="sidebar-footer-btn logout-btn" (click)="logout()">
+        <span>⎋ Déconnexion</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ══ CHAT AREA ══ -->
+  <main class="chat-area">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="header-title">
+          <h3>{{ currentConversation?.title || 'Nouvelle conversation' }}</h3>
+          <div class="status">
+            <span class="status-dot"></span>
+            En ligne
+          </div>
         </div>
       </div>
 
-      <button class="new-chat-btn" (click)="createNewConversation()">
-        + Nouvelle conversation
-      </button>
-    </div>
-
-    <div class="history">
-      <h4>Historique</h4>
-      <div
-        *ngFor="let conv of conversations"
-        (click)="selectConversation(conv.id)"
-        [class.active]="conv.id === activeConversationId"
-        class="history-item"
-      >
-        {{ conv.title }}
-      </div>
-    </div>
-
-    <!-- FOOTER avec logout -->
-    <div class="sidebar-footer">
-      <button class="logout-btn" (click)="logout()" title="Se déconnecter">
-        ⎋ Déconnexion
-      </button>
-    </div>
-  </aside>
-
-  <!-- MAIN CHAT -->
-  <main class="chat-area">
-
-    <!-- HEADER MODIFIÉ -->
-    <div class="chat-header">
-
-      <div class="chat-title">
-        <h3>{{ currentConversation?.title || 'Nouvelle conversation' }}</h3>
-        <span class="status">
-          <span class="status-dot"></span>
-          En ligne
-        </span>
-      </div>
-
-      <!-- ✅ Infos utilisateur -->
       <div class="user-info-header">
         <div class="user-avatar-small">
           {{ currentUser?.nom?.charAt(0) }}
         </div>
+        <span class="user-name">{{ currentUser?.nom }}</span>
+        <span class="dept-chip" *ngFor="let d of currentUser?.departments">{{ d }}</span>
+        <span class="dept-chip admin-chip" *ngIf="currentUser?.is_admin">👑 Admin</span>
+      </div>
+    </div>
 
-        <div class="user-details">
-          <span class="user-name">
-            {{ currentUser?.nom }}
-          </span>
+    <!-- Body -->
+    <div class="chat-body">
 
-          <div class="user-depts">
-            <span
-              class="dept-chip"
-              *ngFor="let d of currentUser?.departments"
-            >
-              {{ d }}
-            </span>
+      <!-- ══ CHAT MAIN ══ -->
+      <div class="chat-main">
 
-            <span
-              class="dept-chip admin-chip"
-              *ngIf="currentUser?.is_admin"
-            >
-              👑 Admin
-            </span>
+        <div class="chat-messages" #scrollContainer>
+
+          <!-- Welcome -->
+          <div *ngIf="!activeConversationId" class="welcome-screen">
+            <div class="welcome-robot">🤖</div>
+            <h2>Bonjour, bienvenue sur PGH Brain 👋</h2>
+            <p>Je suis votre assistant intelligent.<br/>
+               Posez-moi vos questions ou choisissez un exemple pour commencer.</p>
+            <div class="welcome-actions">
+              <button class="welcome-action-btn"
+                      (click)="userMessage = 'Qu\'est-ce que l\'IT ?'; sendMessage()">
+                📚 Qu'est-ce que l'IT ?
+              </button>
+              <button class="welcome-action-btn"
+                      (click)="userMessage = 'Définition de l\'IT'; sendMessage()">
+                🎓 Définition de l'IT
+              </button>
+              <button class="welcome-action-btn"
+                      (click)="userMessage = 'Aide sur les services'; sendMessage()">
+                🔧 Aide sur les services
+              </button>
+            </div>
           </div>
+
+          <!-- Messages -->
+          <div *ngIf="activeConversationId">
+            <div *ngFor="let msg of currentConversation?.messages"
+                 [ngClass]="msg.role === 'user' ? 'message user' : 'message bot'">
+              <div class="bot-avatar" *ngIf="msg.role === 'bot'">🤖</div>
+              <div class="bubble">
+                <div class="message-content">{{ msg.content }}</div>
+                <div class="message-footer">
+                  <span class="timestamp">{{ msg.timestamp }}</span>
+                  <div class="message-actions" *ngIf="msg.role === 'bot'">
+                    <button class="msg-action-btn" title="J'aime">👍</button>
+                    <button class="msg-action-btn" title="Je n'aime pas">👎</button>
+                  </div>
+                </div>
+                <button *ngIf="msg.role === 'bot'"
+                        (click)="speak(msg.content)"
+                        class="play-button"
+                        title="Écouter">🔊</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing -->
+          <div *ngIf="isTyping" class="typing-container">
+            <div class="bot-avatar">🤖</div>
+            <div class="typing-bubble">
+              <div class="typing-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="typing-text">PGH Brain rédige...</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-wrapper">
+          <div class="waveform-bar" *ngIf="isListening">
+            <span *ngFor="let h of waveformBars"
+                  class="wbar" [style.height.px]="h"></span>
+          </div>
+          <div class="input-row">
+            <input type="text"
+                   [(ngModel)]="userMessage"
+                   [placeholder]="isListening ? '🎤 Je vous écoute...' : 'Posez votre question...'"
+                   (keyup.enter)="onEnterKey()"/>
+            <div class="voice-waves" *ngIf="isListening">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+           
+            <div class="mic-wrapper">
+              <span class="rec-dot" *ngIf="isListening"></span>
+              <button class="mic-button"
+                      [class.listening]="isListening"
+                      (click)="toggleVoice()">🎙️</button>
+            </div>
+            <button class="send-button"
+                    (click)="sendMessage()"
+                    [disabled]="isTyping || !userMessage.trim()">➤</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ RIGHT PANEL ══ -->
+      <div class="chat-right-panel">
+
+        <div class="panel-section">
+          <div class="panel-title">Fonctionnalités</div>
+
+          <div class="feature-item">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-text">
+              <h4>Réponses intelligentes</h4>
+              <p>Basées uniquement sur les documents de votre département.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">🕐</div>
+            <div class="feature-text">
+              <h4>Historique des conversations</h4>
+              <p>Retrouvez toutes vos conversations dans la barre latérale.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-text">
+              <h4>Multi-départements</h4>
+              <p>Accès croisé si vous appartenez à plusieurs départements.</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-text">
+              <h4>Accès sécurisé</h4>
+              <p>Chaque employé accède uniquement à ses données autorisées.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-title">Aide rapide</div>
+
+          <div class="faq-item" (click)="toggleFaq(0)">
+            <span>Comment poser une bonne question ?</span>
+            <span class="faq-icon">{{ openFaq === 0 ? '∧' : '∨' }}</span>
+          </div>
+          <div class="faq-answer" *ngIf="openFaq === 0">
+            Posez des questions précises et courtes. Ex : "Quelle est la procédure de congé ?" plutôt que "dis-moi tout sur les congés".
+          </div>
+
+          <div class="faq-item" (click)="toggleFaq(1)">
+            <span>Quels types de questions puis-je poser ?</span>
+            <span class="faq-icon">{{ openFaq === 1 ? '∧' : '∨' }}</span>
+          </div>
+          <div class="faq-answer" *ngIf="openFaq === 1">
+            Uniquement des questions liées à votre département (IT, RH, Finance...). Les réponses viennent des documents internes de l'entreprise.
+          </div>
+
+          <div class="faq-item" (click)="toggleFaq(2)">
+            <span>Où trouver l'historique ?</span>
+            <span class="faq-icon">{{ openFaq === 2 ? '∧' : '∨' }}</span>
+          </div>
+          <div class="faq-answer" *ngIf="openFaq === 2">
+            Toutes vos conversations sont listées dans la barre latérale gauche. Cliquez sur une conversation pour la revoir.
+          </div>
+
+          <div class="faq-item" (click)="toggleFaq(3)">
+            <span>Qui peut utiliser PGH Brain ?</span>
+            <span class="faq-icon">{{ openFaq === 3 ? '∧' : '∨' }}</span>
+          </div>
+          <div class="faq-answer" *ngIf="openFaq === 3">
+            Uniquement les employés PGH dont le compte a été créé par un administrateur. L'accès est limité à votre département.
+          </div>
+
         </div>
       </div>
 
     </div>
-
-    <!-- MESSAGES -->
-    <div class="chat-messages" #scrollContainer>
-
-      <!-- Message de bienvenue -->
-      <div *ngIf="!activeConversationId" class="welcome-screen">
-        <div class="welcome-icon">🤖</div>
-        <h2>Bonjour, bienvenue sur PGH Brain</h2>
-        <p>Sélectionnez une conversation ou créez-en une nouvelle pour commencer.</p>
-      </div>
-
-      <!-- Messages normaux -->
-      <div *ngIf="activeConversationId">
-        <div
-          *ngFor="let msg of currentConversation?.messages"
-          [ngClass]="msg.role === 'user' ? 'message user' : 'message bot'"
-        >
-          <div class="avatar" *ngIf="msg.role === 'bot'">PGH</div>
-          <div class="bubble">
-            <div class="message-content">{{ msg.content }}</div>
-            <button
-              *ngIf="msg.role === 'bot'"
-              (click)="speak(msg.content)"
-              class="play-button"
-              title="Écouter"
-            >🔊</button>
-            <div class="timestamp">{{ msg.timestamp }}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TYPING -->
-      <div *ngIf="isTyping" class="typing-container">
-        <div class="avatar">PGH</div>
-        <div class="typing-bubble">
-          <div class="typing-dots">
-            <span></span><span></span><span></span>
-          </div>
-          <span class="typing-text">PGH Brain écrit...</span>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- INPUT AREA -->
-    <div class="chat-input">
-
-      <!-- Waveform -->
-      <div class="waveform-bar" *ngIf="isListening">
-        <span
-          *ngFor="let h of waveformBars"
-          class="wbar"
-          [style.height.px]="h">
-        </span>
-      </div>
-
-      <div class="input-row">
-
-        <div class="input-wrapper">
-          <input
-            type="text"
-            [(ngModel)]="userMessage"
-            [placeholder]="isListening ? '🎤 Je vous écoute...' : 'Posez votre question...'"
-            (keyup.enter)="onEnterKey()"
-            [class.listening-input]="isListening"
-          />
-          <div class="voice-waves" *ngIf="isListening">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-        </div>
-
-        <select [(ngModel)]="selectedLanguage" class="language-select">
-          <option value="en-US">🇬🇧 English</option>
-          <option value="fr-FR">🇫🇷 Français</option>
-          <option value="ar-SA">🇸🇦 العربية</option>
-        </select>
-
-        <div class="mic-wrapper">
-          <span class="rec-dot" *ngIf="isListening"></span>
-          <button
-            class="mic-button"
-            [class.listening]="isListening"
-            (click)="toggleVoice()"
-            [title]="isListening ? 'Arrêter le micro' : 'Parler'"
-          >🎙️</button>
-        </div>
-
-        <button
-          (click)="sendMessage()"
-          class="send-button"
-          [disabled]="isTyping || !userMessage.trim()"
-        >➤</button>
-
-      </div>
-
-    </div>
-
   </main>
-
 </div>

@@ -26,6 +26,7 @@ class User(Base):
 
     is_active         = Column(Boolean, default=True)
     is_admin          = Column(Boolean, default=False)
+    first_login       = Column(Boolean, default=True)   # ✅ NOUVEAU
     add_date          = Column(DateTime, server_default=func.now())
 
     # ============================

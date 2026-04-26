@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import time
-
+from app.models.otp import OTPCode  # ✅ AJOUTER
 from app.services.document_service import create_collection
 from app.api.chat import router as chat_router
 from app.api.conversation import router as conversation_router
@@ -12,6 +12,8 @@ from app.api.employees import router as employees_router  # ✅ AJOUTÉ
 from app.database.sql import engine, Base
 from app.models.user import User  # nécessaire pour créer la table
 from app.models.employee import Employee  # ✅ AJOUTÉ
+from app.api.analytics import router as analytics_router
+
 
 app = FastAPI(
     title="RAG Enterprise Chatbot",
@@ -53,8 +55,9 @@ app.include_router(chat_router)
 app.include_router(conversation_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
-app.include_router(clustering_router)  # ✅ AJOUTÉ
-app.include_router(employees_router)  # ✅ AJOUTÉ
+app.include_router(clustering_router)  
+app.include_router(employees_router)  
+app.include_router(analytics_router)
 
 @app.get("/")
 def root():

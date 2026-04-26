@@ -267,3 +267,109 @@ def create_employee(
     db.add(emp)
     db.commit()
     return {"message": f"✅ Employé {data.nom} {data.prenom} ajouté à la liste"}
+# ─── MODIFIER UN EMPLOYÉ ─────────────────────────────
+class UpdateEmployeeRequest(BaseModel):
+    nom:              Optional[str] = None
+    prenom:           Optional[str] = None
+    email:            Optional[str] = None
+    matricule:        Optional[str] = None
+    num_poste:        Optional[str] = None
+    unit_label:       Optional[str] = None
+    subsidiary_label: Optional[str] = None
+
+
+@router.put("/update/{cin}")
+def update_employee(
+    cin: str,
+    data: UpdateEmployeeRequest,
+    admin=Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Modifier un employé dans la table employees ET users"""
+
+    # ─── Mettre à jour la table employees ───
+    emp = db.query(Employee).filter(Employee.cin == cin).first()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employé introuvable")
+
+    if data.nom is not None:              emp.nom              = data.nom
+    if data.prenom is not None:           emp.prenom           = data.prenom
+    if data.matricule is not None:        emp.matricule        = data.matricule
+    if data.num_poste is not None:        emp.num_poste        = data.num_poste
+    if data.unit_label is not None:       emp.unit_label       = data.unit_label
+    if data.subsidiary_label is not None: emp.subsidiary_label = data.subsidiary_label
+
+    if data.email is not None:
+        # Vérifier que l'email n'est pas déjà utilisé
+        existing = db.query(Employee).filter(
+            Employee.email == data.email,
+            Employee.cin   != cin
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email déjà utilisé par un autre employé")
+        emp.email = data.email
+
+    # ─── Mettre à jour la table users si l'employé est inscrit ───
+    user = db.query(User).filter(User.cin == cin).first()
+    if user:
+        if data.nom is not None:    user.nom    = data.nom
+        if data.prenom is not None: user.prenom = data.prenom
+
+        if data.email is not None:
+            existing_user = db.query(User).filter(
+                User.email == data.email,
+                User.cin   != cin
+            ).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Email déjà utilisé par un autre utilisateur")
+            user.email = data.email
+
+    db.commit()
+
+    return {
+        "message":       f"✅ Employé {emp.nom} {emp.prenom} mis à jour",
+        "user_updated":  user is not None,
+        "employee": {
+            "cin":   emp.cin,
+            "nom":   emp.nom,
+            "prenom": emp.prenom,
+            "email": emp.email
+        }
+    }
+
+
+# ─── EXPORTER CSV ─────────────────────────────
+@router.get("/export-csv")
+def export_csv(
+    admin=Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Exporter tous les employés en CSV"""
+    from fastapi.responses import StreamingResponse
+
+    employees = db.query(Employee).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow([
+        "nom", "prenom", "cin", "email",
+        "matricule", "num_poste", "unit_label", "subsidiary_label"
+    ])
+
+    # Données
+    for e in employees:
+        writer.writerow([
+            e.nom, e.prenom, e.cin, e.email,
+            e.matricule or "", e.num_poste or "",
+            e.unit_label or "", e.subsidiary_label or ""
+        ])
+
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=employees.csv"}
+    )

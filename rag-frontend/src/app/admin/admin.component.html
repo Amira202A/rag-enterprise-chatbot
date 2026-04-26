@@ -12,19 +12,22 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button [class.active]="activeTab==='stats'" (click)="activeTab='stats'">
+        <button [class.active]="activeTab==='analytics'" (click)="setTab('analytics')">
           <span>📊</span> Statistiques
         </button>
-        <button [class.active]="activeTab==='users'" (click)="activeTab='users'">
+      
+        <button [class.active]="activeTab==='users'" (click)="setTab('users')">
           <span>👥</span> Utilisateurs
         </button>
-          <button [class.active]="activeTab==='add'" (click)="activeTab='add'; searchEmployees()">
+        <button [class.active]="activeTab==='add'" (click)="setTab('add')">
           <span>➕</span> Ajouter employé
         </button>
-        <button [class.active]="activeTab==='docs'" (click)="activeTab='docs'">
+        <button [class.active]="activeTab==='docs'" (click)="setTab('docs')">
           <span>📄</span> Documents
         </button>
-       
+          <button [class.active]="activeTab==='chat'" (click)="setTab('chat')">
+          <span>🤖</span> Chatbot
+        </button>
       </nav>
     </div>
 
@@ -36,9 +39,7 @@
           <span>Administrateur</span>
         </div>
       </div>
-      <button class="logout-btn" (click)="logout()">
-        🚪 Déconnexion
-      </button>
+      <button class="logout-btn" (click)="logout()">🚪 Déconnexion</button>
     </div>
   </aside>
 
@@ -48,7 +49,8 @@
     <!-- HEADER -->
     <div class="admin-header">
       <div>
-        <h1 *ngIf="activeTab==='stats'">Tableau de bord</h1>
+        <h1 *ngIf="activeTab==='analytics'">Statistiques & Analytics</h1>
+        <h1 *ngIf="activeTab==='chat'">Chatbot PGH Brain</h1>
         <h1 *ngIf="activeTab==='users'">Gestion des utilisateurs</h1>
         <h1 *ngIf="activeTab==='docs'">Gestion des documents</h1>
         <h1 *ngIf="activeTab==='add'">Ajouter un employé</h1>
@@ -57,78 +59,284 @@
       <div class="header-badge">🔐 Admin</div>
     </div>
 
-    <!-- ══════════ STATS ══════════ -->
-    <div *ngIf="activeTab==='stats'" class="tab-content">
+    <!-- ══════════ ANALYTICS ══════════ -->
+    <div *ngIf="activeTab==='analytics'" class="tab-content">
 
-      <div class="stats-grid">
-        <div class="stat-card blue">
-          <div class="stat-icon">👥</div>
-          <div class="stat-info">
-            <span class="stat-num">{{ stats.total_users || 0 }}</span>
-            <span class="stat-label">Utilisateurs total</span>
-          </div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-icon">✅</div>
-          <div class="stat-info">
-            <span class="stat-num">{{ stats.active_users || 0 }}</span>
-            <span class="stat-label">Utilisateurs actifs</span>
-          </div>
-        </div>
-        <div class="stat-card red">
-          <div class="stat-icon">🚫</div>
-          <div class="stat-info">
-            <span class="stat-num">{{ stats.inactive_users || 0 }}</span>
-            <span class="stat-label">Utilisateurs inactifs</span>
-          </div>
-        </div>
-        <div class="stat-card purple">
-          <div class="stat-icon">💬</div>
-          <div class="stat-info">
-            <span class="stat-num">{{ stats.total_conversations || 0 }}</span>
-            <span class="stat-label">Conversations</span>
-          </div>
-        </div>
-        <div class="stat-card orange">
-          <div class="stat-icon">📨</div>
-          <div class="stat-info">
-            <span class="stat-num">{{ stats.total_messages || 0 }}</span>
-            <span class="stat-label">Messages échangés</span>
-          </div>
-        </div>
+      <div *ngIf="analyticsLoading" class="analytics-loading">
+        <div class="loading-spinner"></div>
+        <p>Chargement des données...</p>
       </div>
 
-      <!-- K-MEANS -->
-      <div class="kmeans-card">
-        <div class="kmeans-header">
-          <div class="kmeans-left">
-            <div class="kmeans-icon-box">🧠</div>
-            <div>
-              <h3>Clustering K-Means</h3>
-              <p class="kmeans-hint">Mise à jour automatique après chaque import</p>
-            </div>
+      <div *ngIf="!analyticsLoading">
+
+        <div class="analytics-header">
+          <div>
+            <h2 class="section-title">Analytics & Rapports</h2>
+            <p class="section-sub">Données en temps réel de votre chatbot IA</p>
           </div>
-          <div class="kmeans-indicator" [class.active]="kmeansActive">
-            <span class="indicator-dot"></span>
-            <span>{{ kmeansActive ? 'Actif — ' + kmeansNClusters + ' clusters' : 'En attente de documents' }}</span>
+          <div class="period-filters">
+            <button [class.active]="selectedPeriod==='day'"   (click)="changePeriod('day')">Aujourd'hui</button>
+            <button [class.active]="selectedPeriod==='week'"  (click)="changePeriod('week')">Semaine</button>
+            <button [class.active]="selectedPeriod==='month'" (click)="changePeriod('month')">Mois</button>
           </div>
         </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card blue">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-info">
+              <span class="kpi-val">{{ analyticsData.total_users || 0 }}</span>
+              <span class="kpi-label">Utilisateurs</span>
+              <span class="kpi-sub">{{ analyticsData.active_users || 0 }} actifs</span>
+            </div>
+          </div>
+          <div class="kpi-card purple">
+            <div class="kpi-icon">💬</div>
+            <div class="kpi-info">
+              <span class="kpi-val">{{ analyticsData.total_convs || 0 }}</span>
+              <span class="kpi-label">Conversations</span>
+              <span class="kpi-sub">+{{ analyticsData.convs_today || 0 }} aujourd'hui</span>
+            </div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-icon">📨</div>
+            <div class="kpi-info">
+              <span class="kpi-val">{{ analyticsData.total_msgs || 0 }}</span>
+              <span class="kpi-label">Messages</span>
+              <span class="kpi-sub">+{{ analyticsData.msgs_today || 0 }} aujourd'hui</span>
+            </div>
+          </div>
+          <div class="kpi-card orange">
+            <div class="kpi-icon">😊</div>
+            <div class="kpi-info">
+              <span class="kpi-val">{{ satisfaction.satisfaction_rate || 0 }}%</span>
+              <span class="kpi-label">Satisfaction</span>
+              <span class="kpi-sub">{{ satisfaction.likes || 0 }} 👍 · {{ satisfaction.dislikes || 0 }} 👎</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card large">
+            <div class="chart-header"><h3>📈 Évolution des conversations</h3></div>
+            <div class="chart-body"><canvas id="lineChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>📊 Messages échangés</h3></div>
+            <div class="chart-body"><canvas id="barMessages"></canvas></div>
+            <div class="chart-legend-custom">
+              <span class="legend-dot purple"></span> Utilisateur :
+              <strong>{{ messagesStats.user_messages || 0 }}</strong>
+              &nbsp;&nbsp;
+              <span class="legend-dot green"></span> Bot :
+              <strong>{{ messagesStats.bot_messages || 0 }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header"><h3>🍩 Répartition par département</h3></div>
+            <div class="chart-body"><canvas id="deptChart"></canvas></div>
+          </div>
+          <div class="chart-card large">
+            <div class="chart-header"><h3>📌 Top Keywords</h3></div>
+            <div class="chart-body"><canvas id="keywordsChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="charts-row three">
+          <div class="chart-card">
+            <div class="chart-header"><h3>😊 Satisfaction</h3></div>
+            <div class="chart-body gauge-body">
+              <canvas id="satisfactionChart"></canvas>
+              <div class="gauge-center">
+                <span class="gauge-val">{{ satisfaction.satisfaction_rate || 0 }}%</span>
+                <span class="gauge-lbl">Score</span>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>⚠️ Taux de réussite</h3></div>
+            <div class="chart-body"><canvas id="fallbackChart"></canvas></div>
+            <div class="chart-legend-custom">
+              <span class="legend-dot green"></span> Réussite :
+              <strong>{{ fallbackRate.success_rate || 0 }}%</strong>
+              &nbsp;
+              <span class="legend-dot red"></span> Fallback :
+              <strong>{{ fallbackRate.fallback_rate || 0 }}%</strong>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>🌍 Langues utilisées</h3></div>
+            <div class="chart-body"><canvas id="langChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header"><h3>📄 Documents RAG utilisés</h3></div>
+            <div class="chart-body"><canvas id="ragChart"></canvas></div>
+          </div>
+          <div class="chart-card large">
+            <div class="chart-header"><h3>🔥 Heatmap d'activité (4 semaines)</h3></div>
+            <div class="chart-body heatmap-body">
+              <canvas id="heatmapCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════ CHATBOT ADMIN ══════════ -->
+    <div *ngIf="activeTab==='chat'" class="chat-tab-container">
+
+      <!-- Sidebar conversations -->
+      <div class="chat-sidebar">
+
+        <button class="new-chat-btn-admin" (click)="createAdminConversation()">
+          ＋ Nouvelle conversation
+        </button>
+
+        <div class="chat-search-box">
+          <input type="text"
+                 [(ngModel)]="chatSearchQuery"
+                 placeholder="🔍 Rechercher..."
+                 class="chat-search-input"/>
+        </div>
+
+        <div class="chat-history">
+          <h4>Historique</h4>
+          <div *ngFor="let conv of filteredAdminConversations"
+               class="chat-history-item"
+               [class.active]="conv.id === activeAdminConvId"
+               (click)="selectAdminConversation(conv)">
+            <span class="chat-history-icon">💬</span>
+            <span class="chat-history-title">{{ conv.title }}</span>
+          </div>
+          <div *ngIf="filteredAdminConversations.length === 0 && chatSearchQuery"
+               class="chat-history-empty">
+            Aucun résultat
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Chat main -->
+      <div class="chat-main-admin">
+
+        <!-- Chat header -->
+        <div class="chat-header-admin">
+          <div>
+            <h3>{{ activeAdminConvTitle || 'Nouvelle conversation' }}</h3>
+            <div class="chat-status">
+              <span class="status-dot-admin"></span>
+              En ligne
+            </div>
+          </div>
+          <div class="chat-user-info">
+            <div class="chat-user-avatar">{{ adminUser.nom?.charAt(0) }}</div>
+            <span class="chat-user-name">{{ adminUser.nom }}</span>
+            <span class="dept-chip-admin">👑 Admin</span>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages-admin" #adminScrollRef>
+
+          <!-- Welcome -->
+          <div *ngIf="!activeAdminConvId" class="welcome-admin">
+            <div class="welcome-robot-admin">🤖</div>
+            <h2>Bonjour, {{ adminUser.nom }} 👋</h2>
+            <p>Je suis votre assistant intelligent. Posez-moi vos questions sur vos documents.</p>
+            <div class="welcome-chips-admin">
+              <button class="welcome-chip-admin"
+                      (click)="adminChatMessage = 'Qu\'est-ce que l\'IT ?'; sendAdminMessage()">
+                📚 Qu'est-ce que l'IT ?
+              </button>
+              <button class="welcome-chip-admin"
+                      (click)="adminChatMessage = 'Aide sur les services'; sendAdminMessage()">
+                🔧 Aide sur les services
+              </button>
+              <button class="welcome-chip-admin"
+                      (click)="adminChatMessage = 'Résumé des documents RH'; sendAdminMessage()">
+                📄 Résumé des documents RH
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages list -->
+          <div *ngIf="activeAdminConvId">
+            <div *ngFor="let msg of adminCurrentMessages"
+                 [ngClass]="msg.role === 'user' ? 'admin-msg user' : 'admin-msg bot'">
+              <div class="admin-bot-avatar" *ngIf="msg.role === 'bot'">🤖</div>
+              <div class="admin-bubble">
+                <div class="admin-msg-content">{{ msg.content }}</div>
+                <div class="admin-msg-footer">
+                  <span class="admin-msg-time">{{ msg.timestamp }}</span>
+                  <div class="admin-msg-actions" *ngIf="msg.role === 'bot'">
+                    <button class="admin-action-btn" (click)="adminSpeak(msg.content)" title="Écouter">🔊</button>
+                    <button class="admin-action-btn" title="J'aime">👍</button>
+                    <button class="admin-action-btn" title="Je n'aime pas">👎</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing -->
+          <div *ngIf="adminTyping" class="admin-msg bot">
+            <div class="admin-bot-avatar">🤖</div>
+            <div class="admin-bubble typing-bubble-admin">
+              <div class="admin-typing-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="admin-typing-text">PGH Brain rédige...</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-admin">
+          <div class="waveform-bar-admin" *ngIf="adminListening">
+            <span *ngFor="let h of adminWaveformBars"
+                  class="wbar-admin" [style.height.px]="h"></span>
+          </div>
+          <div class="input-row-admin">
+            <input type="text"
+                   [(ngModel)]="adminChatMessage"
+                   [placeholder]="adminListening ? '🎤 Je vous écoute...' : 'Posez votre question...'"
+                   (keyup.enter)="onAdminEnter()"
+                   [class.listening-input-admin]="adminListening"/>
+            <div class="voice-waves-admin" *ngIf="adminListening">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="mic-wrapper-admin">
+              <span class="rec-dot-admin" *ngIf="adminListening"></span>
+              <button class="mic-btn-admin"
+                      [class.listening]="adminListening"
+                      (click)="toggleAdminVoice()">🎙️</button>
+            </div>
+            <button class="send-btn-admin"
+                    (click)="sendAdminMessage()"
+                    [disabled]="adminTyping || !adminChatMessage.trim()">➤</button>
+          </div>
+        </div>
+
       </div>
 
     </div>
 
     <!-- ══════════ USERS ══════════ -->
     <div *ngIf="activeTab==='users'" class="tab-content">
-
-      <!-- Header avec bouton ajouter -->
       <div class="section-header">
         <div>
           <h2 class="section-title">Liste des utilisateurs</h2>
           <p class="section-sub">Gérez les accès et les départements</p>
         </div>
-        <button class="btn-create" (click)="openCreateModal()">
-          ＋ Nouvel utilisateur
-        </button>
+        <button class="btn-create" (click)="openCreateModal()">＋ Nouvel utilisateur</button>
       </div>
 
       <div class="table-card">
@@ -139,15 +347,9 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>Nom</th>
-              <th>Prénom</th>
-              <th>CIN</th>
-              <th>Email</th>
-              <th>Statut</th>
-              <th>Rôle</th>
-              <th>Départements</th>
-              <th>Actions</th>
+              <th>#</th><th>Nom</th><th>Prénom</th><th>CIN</th>
+              <th>Email</th><th>Statut</th><th>Rôle</th>
+              <th>Départements</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -158,9 +360,7 @@
               <td><code>{{ user.cin }}</code></td>
               <td>{{ user.email }}</td>
               <td>
-                <span class="badge"
-                      [class.active]="user.is_active"
-                      [class.inactive]="!user.is_active">
+                <span class="badge" [class.active]="user.is_active" [class.inactive]="!user.is_active">
                   {{ user.is_active ? '✅ Actif' : '🚫 Inactif' }}
                 </span>
               </td>
@@ -170,30 +370,22 @@
                 </span>
               </td>
               <td>
-                <span class="dept-all-badge" *ngIf="user.is_admin">
-                  🌐 Tous les départements
-                </span>
+                <span class="dept-all-badge" *ngIf="user.is_admin">🌐 Tous les départements</span>
                 <div class="dept-manager" *ngIf="!user.is_admin">
                   <div class="dept-active-tags">
                     <span class="dept-active-tag" *ngFor="let d of user.departments">
                       {{ d }}
-                      <span class="dept-remove"
-                            (click)="toggleDepartment(user, d, false)">×</span>
+                      <span class="dept-remove" (click)="toggleDepartment(user, d, false)">×</span>
                     </span>
                     <span class="dept-empty" *ngIf="!user.departments.length">Aucun</span>
                   </div>
                   <div class="dept-dropdown">
-                    <button class="dept-add-btn" (click)="user.showDepts = !user.showDepts">
-                      + Ajouter
-                    </button>
+                    <button class="dept-add-btn" (click)="user.showDepts = !user.showDepts">+ Ajouter</button>
                     <div class="dept-dropdown-menu" *ngIf="user.showDepts">
                       <label *ngFor="let dept of allDepartments" class="dept-option"
                              [class.selected]="user.departments.includes(dept)"
-                             (click)="toggleDepartment(user, dept, !user.departments.includes(dept));
-                                      user.showDepts=false">
-                        <span class="dept-check-icon">
-                          {{ user.departments.includes(dept) ? '✅' : '○' }}
-                        </span>
+                             (click)="toggleDepartment(user, dept, !user.departments.includes(dept)); user.showDepts=false">
+                        <span class="dept-check-icon">{{ user.departments.includes(dept) ? '✅' : '○' }}</span>
                         {{ dept }}
                       </label>
                     </div>
@@ -202,56 +394,42 @@
               </td>
               <td class="actions">
                 <button class="btn-edit" (click)="openEditModal(user)">✏️ Éditer</button>
-                <button class="btn-toggle" (click)="toggleUser(user)"
-                        [class.deactivate]="user.is_active">
+                <button class="btn-toggle" (click)="toggleUser(user)" [class.deactivate]="user.is_active">
                   {{ user.is_active ? 'Désactiver' : 'Activer' }}
                 </button>
-                <button class="btn-delete" (click)="deleteUser(user)"
-                        [disabled]="user.is_admin">
-                  Supprimer
-                </button>
+                <button class="btn-delete" (click)="deleteUser(user)" [disabled]="user.is_admin">Supprimer</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
     </div>
 
-    <!-- ══ MODAL ÉDITION ══ -->
+    <!-- ══ MODAL ÉDITION USER ══ -->
     <div class="modal-overlay" *ngIf="showEditModal" (click)="closeModals()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>✏️ Modifier l'utilisateur</h3>
           <button class="modal-close" (click)="closeModals()">✕</button>
         </div>
-
         <div class="modal-body">
-          <div class="modal-field">
-            <label>Nom</label>
-            <input type="text" [(ngModel)]="editForm.nom" placeholder="Nom"/>
-          </div>
-          <div class="modal-field">
-            <label>Prénom</label>
-            <input type="text" [(ngModel)]="editForm.prenom" placeholder="Prénom"/>
-          </div>
-          <div class="modal-field">
-            <label>Email</label>
-            <input type="email" [(ngModel)]="editForm.email" placeholder="Email"/>
-          </div>
+          <div class="modal-field"><label>Nom</label>
+            <input type="text" [(ngModel)]="editForm.nom" placeholder="Nom"/></div>
+          <div class="modal-field"><label>Prénom</label>
+            <input type="text" [(ngModel)]="editForm.prenom" placeholder="Prénom"/></div>
+          <div class="modal-field"><label>Email</label>
+            <input type="email" [(ngModel)]="editForm.email" placeholder="Email"/></div>
           <div class="modal-field">
             <label>Départements</label>
             <div class="modal-depts">
               <label *ngFor="let dept of allDepartments" class="dept-check-modal"
                      [class.selected]="editForm.departments.includes(dept)"
                      (click)="toggleEditDept(dept)">
-                <span>{{ editForm.departments.includes(dept) ? '✅' : '○' }}</span>
-                {{ dept }}
+                <span>{{ editForm.departments.includes(dept) ? '✅' : '○' }}</span> {{ dept }}
               </label>
             </div>
           </div>
         </div>
-
         <div class="modal-footer">
           <div class="modal-error" *ngIf="modalError">❌ {{ modalError }}</div>
           <button class="btn-cancel" (click)="closeModals()">Annuler</button>
@@ -263,54 +441,41 @@
       </div>
     </div>
 
-    <!-- ══ MODAL CRÉATION ══ -->
+    <!-- ══ MODAL CRÉATION USER ══ -->
     <div class="modal-overlay" *ngIf="showCreateModal" (click)="closeModals()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>➕ Nouvel utilisateur</h3>
           <button class="modal-close" (click)="closeModals()">✕</button>
         </div>
-
         <div class="modal-body">
           <div class="modal-row">
-            <div class="modal-field">
-              <label>Nom *</label>
-              <input type="text" [(ngModel)]="createForm.nom" placeholder="Nom de famille"/>
-            </div>
-            <div class="modal-field">
-              <label>Prénom *</label>
-              <input type="text" [(ngModel)]="createForm.prenom" placeholder="Prénom"/>
-            </div>
+            <div class="modal-field"><label>Nom *</label>
+              <input type="text" [(ngModel)]="createForm.nom" placeholder="Nom"/></div>
+            <div class="modal-field"><label>Prénom *</label>
+              <input type="text" [(ngModel)]="createForm.prenom" placeholder="Prénom"/></div>
           </div>
-          <div class="modal-field">
-            <label>CIN *</label>
-            <input type="text" [(ngModel)]="createForm.cin" placeholder="Numéro CIN"/>
-          </div>
-          <div class="modal-field">
-            <label>Email *</label>
-            <input type="email" [(ngModel)]="createForm.email" placeholder="email@example.com"/>
-          </div>
+          <div class="modal-field"><label>CIN *</label>
+            <input type="text" [(ngModel)]="createForm.cin" placeholder="CIN"/></div>
+          <div class="modal-field"><label>Email *</label>
+            <input type="email" [(ngModel)]="createForm.email" placeholder="email@example.com"/></div>
           <div class="modal-field">
             <label>Départements</label>
             <div class="modal-depts">
               <label *ngFor="let dept of allDepartments" class="dept-check-modal"
                      [class.selected]="createForm.departments.includes(dept)"
                      (click)="toggleCreateDept(dept)">
-                <span>{{ createForm.departments.includes(dept) ? '✅' : '○' }}</span>
-                {{ dept }}
+                <span>{{ createForm.departments.includes(dept) ? '✅' : '○' }}</span> {{ dept }}
               </label>
             </div>
           </div>
-          <p class="modal-note">
-            📧 Un mot de passe sera généré automatiquement et envoyé par email
-          </p>
+          <p class="modal-note">📧 Un mot de passe sera généré automatiquement et envoyé par email</p>
         </div>
-
         <div class="modal-footer">
           <div class="modal-error"   *ngIf="modalError">❌ {{ modalError }}</div>
           <div class="modal-success" *ngIf="modalSuccess">✅ {{ modalSuccess }}</div>
           <button class="btn-cancel" (click)="closeModals()">Annuler</button>
-          <button class="btn-save"   (click)="saveCreate()" [disabled]="modalLoading">
+          <button class="btn-save" (click)="saveCreate()" [disabled]="modalLoading">
             <span *ngIf="!modalLoading">➕ Créer & Envoyer email</span>
             <span *ngIf="modalLoading">⏳ Création...</span>
           </button>
@@ -320,33 +485,19 @@
 
     <!-- ══════════ DOCUMENTS ══════════ -->
     <div *ngIf="activeTab==='docs'" class="tab-content">
-
       <div class="table-card" style="margin-bottom: 24px;">
         <div class="table-header">
           <h3>📚 Documents indexés</h3>
           <span class="badge-count">{{ documents.length }} sources</span>
         </div>
         <table class="data-table">
-          <thead>
-            <tr>
-              <th>Fichier</th>
-              <th>Département</th>
-              <th>Pages</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Fichier</th><th>Département</th><th>Pages</th><th>Actions</th></tr></thead>
           <tbody>
             <tr *ngFor="let doc of documents">
               <td>📄 {{ doc.source }}</td>
-              <td>
-                <span class="badge active">{{ doc.department }}</span>
-              </td>
+              <td><span class="badge active">{{ doc.department }}</span></td>
               <td>{{ doc.pages }}</td>
-              <td>
-                <button class="btn-delete" (click)="deleteDocument(doc.source)">
-                  Supprimer
-                </button>
-              </td>
+              <td><button class="btn-delete" (click)="deleteDocument(doc.source)">Supprimer</button></td>
             </tr>
           </tbody>
         </table>
@@ -355,13 +506,11 @@
       <div class="upload-card">
         <div class="upload-icon">📄</div>
         <h3>Importer un document PDF</h3>
-        <p>Choisissez le département cible — seuls les utilisateurs de ce département verront ce document</p>
-
-        <div class="field" style="margin-bottom: 20px; text-align: left;">
-          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:8px;">
-            Département cible
-          </label>
-          <select [(ngModel)]="uploadDepartment" class="dept-select" style="width:100%; padding:12px; border-radius:12px; border:1.5px solid #e2e8f0;">
+        <p>Choisissez le département cible</p>
+        <div class="field" style="margin-bottom:20px;text-align:left">
+          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:8px">Département cible</label>
+          <select [(ngModel)]="uploadDepartment" class="dept-select"
+                  style="width:100%;padding:12px;border-radius:12px;border:1.5px solid #e2e8f0">
             <option value="IT">🖥️ IT</option>
             <option value="RH">👥 RH</option>
             <option value="Marketing">📣 Marketing</option>
@@ -370,7 +519,6 @@
             <option value="General">🌐 Général (tous)</option>
           </select>
         </div>
-
         <div class="upload-zone" [class.has-file]="selectedFile">
           <input type="file" accept=".pdf" (change)="onFileSelected($event)" id="fileInput"/>
           <label for="fileInput">
@@ -378,23 +526,18 @@
             <span *ngIf="selectedFile">✅ {{ selectedFile.name }}</span>
           </label>
         </div>
-
-        <button class="btn-upload" (click)="uploadPDF()"
-                [disabled]="!selectedFile || uploading">
+        <button class="btn-upload" (click)="uploadPDF()" [disabled]="!selectedFile || uploading">
           <span *ngIf="!uploading">⬆️ Importer pour {{ uploadDepartment }}</span>
           <span *ngIf="uploading" class="spinner"></span>
         </button>
-
         <div class="alert-success" *ngIf="uploadMessage">✅ {{ uploadMessage }}</div>
         <div class="alert-error"   *ngIf="uploadError">❌ {{ uploadError }}</div>
       </div>
-
     </div>
 
     <!-- ══════════ AJOUTER EMPLOYÉ ══════════ -->
     <div *ngIf="activeTab==='add'" class="tab-content">
 
-      <!-- Import CSV -->
       <div class="import-bar">
         <div class="import-info">
           <span>📋</span>
@@ -405,117 +548,122 @@
         </div>
         <div class="import-actions">
           <input type="file" accept=".csv" (change)="onCsvSelected($event)" id="csvInput" style="display:none"/>
-          <label for="csvInput" class="btn-import">
-            📁 Choisir CSV
-          </label>
-          <button class="btn-import-do" *ngIf="selectedCsv"
-                  (click)="importCsv()" [disabled]="importingCsv">
+          <label for="csvInput" class="btn-import">📁 Choisir CSV</label>
+          <button class="btn-import-do" *ngIf="selectedCsv" (click)="importCsv()" [disabled]="importingCsv">
             {{ importingCsv ? '⏳ Import...' : '⬆️ Importer' }}
           </button>
+          <button class="btn-import" (click)="exportCsv()">📥 Exporter CSV</button>
           <span class="csv-name" *ngIf="selectedCsv">{{ selectedCsv.name }}</span>
         </div>
       </div>
 
-      <div class="alert-success" *ngIf="importSuccess" style="margin-bottom:16px;">
-        ✅ {{ importSuccess }}
-      </div>
+      <div class="alert-success" *ngIf="importSuccess" style="margin-bottom:16px;">✅ {{ importSuccess }}</div>
 
-      <!-- Barre de recherche -->
       <div class="search-section">
         <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="M21 21l-4.35-4.35"/>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
           </svg>
-          <input type="text"
-                 [(ngModel)]="searchQuery"
+          <input type="text" [(ngModel)]="searchQuery"
                  (ngModelChange)="searchEmployees()"
                  placeholder="Rechercher par nom, prénom, CIN, email..."/>
           <span class="search-clear" *ngIf="searchQuery" (click)="clearSearch()">✕</span>
         </div>
-        <p class="search-hint" *ngIf="searchQuery">
-          {{ employeeResults.length }} résultat(s) pour "{{ searchQuery }}"
-        </p>
+        <p class="search-hint" *ngIf="searchQuery">{{ employeeResults.length }} résultat(s)</p>
       </div>
 
-      <!-- TABLE SANS DÉPARTEMENT NI FILIALE -->
       <div class="table-card" *ngIf="employeeResults.length > 0">
         <div class="table-header">
           <h3>Résultats de recherche</h3>
           <span class="badge-count">{{ employeeResults.length }} employés</span>
         </div>
         <table class="data-table">
-          <thead>
-            <tr>
-              <th>Nom</th>
-              <th>Prénom</th>
-              <th>CIN</th>
-              <th>Email</th>
-              <th>Statut</th>
-              <th>Action</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Nom</th><th>Prénom</th><th>CIN</th><th>Email</th><th>Statut</th><th>Action</th></tr></thead>
           <tbody>
-            <tr *ngFor="let emp of employeeResults"
-                [class.already-registered]="emp.is_registered">
+            <tr *ngFor="let emp of employeeResults" [class.already-registered]="emp.is_registered">
               <td><strong>{{ emp.nom }}</strong></td>
               <td>{{ emp.prenom }}</td>
               <td><code>{{ emp.cin }}</code></td>
               <td>{{ emp.email }}</td>
               <td>
-                <span class="badge"
-                      [class.active]="!emp.is_registered"
-                      [class.inactive]="emp.is_registered">
+                <span class="badge" [class.active]="!emp.is_registered" [class.inactive]="emp.is_registered">
                   {{ emp.is_registered ? '✅ Inscrit' : '🆕 Nouveau' }}
                 </span>
               </td>
-              <td>
+              <td class="actions">
+                <button class="btn-edit" (click)="openEditEmpModal(emp)">✏️ Éditer</button>
                 <button class="btn-add-emp"
                         [disabled]="emp.is_registered || addingEmployee === emp.cin"
                         (click)="addEmployee(emp)">
-                  <span *ngIf="addingEmployee !== emp.cin">
-                    {{ emp.is_registered ? 'Déjà inscrit' : '+ Ajouter' }}
-                  </span>
+                  <span *ngIf="addingEmployee !== emp.cin">{{ emp.is_registered ? 'Déjà inscrit' : '+ Ajouter' }}</span>
                   <span *ngIf="addingEmployee === emp.cin">⏳</span>
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
-
-        <!-- NOTE INFORMATIVE -->
-        <div style="padding: 12px 20px; background: #f0f9ff; border-top: 1px solid #e0f2fe;
-                    border-radius: 0 0 12px 12px; font-size: 13px; color: #0369a1;">
-          ℹ️ Le département sera assigné manuellement depuis l'onglet <strong>Utilisateurs</strong> après l'ajout.
+        <div style="padding:12px 20px;background:#f0f9ff;border-top:1px solid #e0f2fe;
+                    border-radius:0 0 12px 12px;font-size:13px;color:#0369a1;">
+          ℹ️ Le département sera assigné depuis l'onglet <strong>Utilisateurs</strong> après l'ajout.
         </div>
       </div>
 
-      <!-- Vide -->
-      <div class="empty-state"
-           *ngIf="employeeResults.length === 0 && searchQuery">
+      <div class="empty-state" *ngIf="employeeResults.length === 0 && searchQuery">
         <div class="empty-icon">🔍</div>
         <p>Aucun employé trouvé pour "{{ searchQuery }}"</p>
-        <p style="font-size:13px; margin-top:8px; color:#94a3b8;">
-          Vérifiez que les employés sont importés dans la base de données
-        </p>
       </div>
 
-      <div class="empty-state"
-           *ngIf="employeeResults.length === 0 && !searchQuery">
+      <div class="empty-state" *ngIf="employeeResults.length === 0 && !searchQuery">
         <div class="empty-icon">👥</div>
         <p>Importez d'abord un fichier CSV ou recherchez un employé</p>
       </div>
 
-      <!-- Alertes -->
-      <div class="alert-success" *ngIf="addSuccess" style="margin-top:20px;">
-        ✅ {{ addSuccess }}
-      </div>
-      <div class="alert-error" *ngIf="addError" style="margin-top:20px;">
-        ❌ {{ addError }}
-      </div>
-
+      <div class="alert-success" *ngIf="addSuccess" style="margin-top:20px;">✅ {{ addSuccess }}</div>
+      <div class="alert-error"   *ngIf="addError"   style="margin-top:20px;">❌ {{ addError }}</div>
     </div>
 
   </main>
+
+  <!-- ══ MODAL ÉDITION EMPLOYÉ ══ -->
+  <div class="modal-overlay" *ngIf="showEditEmpModal" (click)="closeEditEmpModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>✏️ Modifier l'employé</h3>
+        <button class="modal-close" (click)="closeEditEmpModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-error"   *ngIf="editEmpError">❌ {{ editEmpError }}</div>
+        <div class="modal-success" *ngIf="editEmpSuccess">✅ {{ editEmpSuccess }}</div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Nom</label>
+            <input type="text" [(ngModel)]="editEmpForm.nom"/></div>
+          <div class="modal-field"><label>Prénom</label>
+            <input type="text" [(ngModel)]="editEmpForm.prenom"/></div>
+        </div>
+        <div class="modal-field"><label>Email</label>
+          <input type="email" [(ngModel)]="editEmpForm.email"/></div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Matricule</label>
+            <input type="text" [(ngModel)]="editEmpForm.matricule"/></div>
+          <div class="modal-field"><label>Num Poste</label>
+            <input type="text" [(ngModel)]="editEmpForm.num_poste"/></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Département</label>
+            <input type="text" [(ngModel)]="editEmpForm.unit_label"/></div>
+          <div class="modal-field"><label>Filiale</label>
+            <input type="text" [(ngModel)]="editEmpForm.subsidiary_label"/></div>
+        </div>
+        <p class="modal-note">ℹ️ Si inscrit, nom et email seront mis à jour dans les utilisateurs.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeEditEmpModal()">Annuler</button>
+        <button class="btn-save" (click)="saveEditEmp()" [disabled]="editEmpLoading">
+          <span *ngIf="!editEmpLoading">💾 Enregistrer</span>
+          <span *ngIf="editEmpLoading">⏳ Sauvegarde...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>

@@ -9,39 +9,99 @@
     <div class="grid-overlay"></div>
   </div>
 
-  <!-- MAIN CARD -->
-  <div class="auth-card" [class.show-register]="!isLogin">
+  <div class="auth-card">
 
-    <!-- ══════════════ SIGN IN FORM ══════════════ -->
-    <div class="form-panel form-login">
+    <!-- ══════════════ LEFT — VISUAL ══════════════ -->
+    <div class="visual-panel">
+      <div class="visual-divider"></div>
+
+      <div class="visual-content">
+
+        <!-- Logo -->
+      <div class="v-logo">
+  <img src="assets/logoo.png" alt="PGH Logo" class="v-logo-img"/>
+  <div class="v-logo-text">
+    <h1>PGH Brain</h1>
+    <span>Votre Chatbot AI </span>
+  </div>
+</div>
+
+        <!-- Headline -->
+        <h2 class="v-headline">
+          L'intelligence<br/>
+          <em>artificielle</em><br/>
+          au service de<br/>votre entreprise
+        </h2>
+
+        <p class="v-sub">
+          Accédez à votre espace IA sécurisé et exploitez la puissance
+          de l'intelligence artificielle adaptée à votre département.
+        </p>
+
+        <!-- Stats -->
+        <div class="v-stats">
+          <div class="v-stat">
+            <span class="v-stat-val">24/7</span>
+            <span class="v-stat-lbl">Disponible</span>
+          </div>
+          <div class="v-stat">
+            <span class="v-stat-val">100%</span>
+            <span class="v-stat-lbl">Sécurisé</span>
+          </div>
+          <div class="v-stat">
+            <span class="v-stat-val">IA</span>
+            <span class="v-stat-lbl">Avancée</span>
+          </div>
+        </div>
+
+        <!-- Features -->
+        <div class="v-features">
+          <div class="v-feature">
+            <div class="v-feature-icon">🔒</div>
+            <div class="v-feature-text">
+              <strong>Accès par département</strong>
+              <span>Données filtrées selon votre profil</span>
+            </div>
+          </div>
+          <div class="v-feature">
+            <div class="v-feature-icon">🧠</div>
+            <div class="v-feature-text">
+              <strong>RAG intelligent</strong>
+              <span>Réponses basées sur vos documents</span>
+            </div>
+          </div>
+          <div class="v-feature">
+            <div class="v-feature-icon">🎙️</div>
+            <div class="v-feature-text">
+              <strong>Interface vocale</strong>
+              <span>Parlez directement au chatbot</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════ RIGHT — FORM ══════════════ -->
+    <div class="form-panel">
       <div class="form-inner">
 
-        <div class="form-brand">
-          <div class="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M8 12c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4"/>
-              <circle cx="12" cy="12" r="1.5" fill="white" stroke="none"/>
-            </svg>
+        <div class="form-welcome">
+          <div class="form-eyebrow">
+            <span class="eyebrow-dot"></span>
+            Accès sécurisé
           </div>
-          <div>
-            <h2>PGH Brain</h2>
-            <p>Intelligence artificielle d'entreprise</p>
-          </div>
+          <h3 class="form-title">Bon retour.</h3>
+          <p class="form-subtitle">
+            Connectez-vous avec votre CIN pour accéder à votre espace IA personnalisé.
+          </p>
         </div>
 
-        <div class="form-tag">
-          <span class="tag-dot"></span>
-          Accès sécurisé
-        </div>
-
-        <h3 class="form-title">Bon retour !</h3>
-        <p class="form-subtitle">Connectez-vous pour accéder à votre espace IA.</p>
-
-        <div class="feedback feedback-error" *ngIf="error && isLogin">
+        <!-- Erreur -->
+        <div class="feedback feedback-error" *ngIf="error">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="8"  x2="12"    y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <span>{{ error }}</span>
@@ -49,6 +109,7 @@
 
         <div class="form-fields">
 
+          <!-- CIN -->
           <div class="field">
             <label>Numéro CIN</label>
             <div class="input-group" [class.focused]="cinFocused">
@@ -56,12 +117,16 @@
                 <rect x="2" y="5" width="20" height="14" rx="2"/>
                 <path d="M2 10h20"/>
               </svg>
-              <input type="text" [(ngModel)]="cin" placeholder="Entrez votre CIN"
+              <input type="text"
+                     [(ngModel)]="cin"
+                     placeholder="Entrez votre CIN"
                      [disabled]="loading"
-                     (focus)="cinFocused=true" (blur)="cinFocused=false"/>
+                     (focus)="cinFocused=true"
+                     (blur)="cinFocused=false"/>
             </div>
           </div>
 
+          <!-- Mot de passe -->
           <div class="field">
             <label>Mot de passe</label>
             <div class="input-group" [class.focused]="pwFocused">
@@ -70,16 +135,23 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
               <input [type]="showPassword ? 'text' : 'password'"
-                     [(ngModel)]="password" placeholder="Mot de passe"
-                     (keyup.enter)="login()" [disabled]="loading"
-                     (focus)="pwFocused=true" (blur)="pwFocused=false"/>
-              <button type="button" class="eye-btn" (click)="showPassword=!showPassword">
-                <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                     [(ngModel)]="password"
+                     placeholder="Mot de passe"
+                     (keyup.enter)="login()"
+                     [disabled]="loading"
+                     (focus)="pwFocused=true"
+                     (blur)="pwFocused=false"/>
+              <button type="button" class="eye-btn"
+                      (click)="showPassword=!showPassword">
+                <svg *ngIf="!showPassword" viewBox="0 0 24 24">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
-                <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                <svg *ngIf="showPassword" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8
+                           a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0
+                           0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19
+                           m-6.72-1.07a3 3 0 11-4.24-4.24"/>
                   <line x1="1" y1="1" x2="23" y2="23"/>
                 </svg>
               </button>
@@ -88,157 +160,325 @@
 
         </div>
 
+        <!-- Actions -->
         <div class="form-actions">
           <label class="remember-me">
             <input type="checkbox"/> Se souvenir de moi
           </label>
-          <a href="#" class="forgot-link">Mot de passe oublié ?</a>
+          <a class="forgot-link" (click)="openForgotModal()">
+            Mot de passe oublié ?
+          </a>
         </div>
 
+        <!-- Bouton connexion -->
         <button class="submit-btn" (click)="login()" [disabled]="loading">
-          <span *ngIf="!loading">Se connecter →</span>
+          <span *ngIf="!loading">
+            Se connecter
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </span>
           <div *ngIf="loading" class="btn-loader">
             <div></div><div></div><div></div>
           </div>
         </button>
 
-        <div class="switch-link">
-          Pas encore de compte ?
-          <a (click)="switchToRegister()">Créer un compte</a>
+        <!-- Note -->
+        <div class="form-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Accès réservé aux employés PGH
         </div>
 
-      </div>
-    </div>
-
-   <!-- ══════════════ SIGN UP FORM ══════════════ -->
-<div class="form-panel form-register">
-  <div class="form-inner">
-
-    <div class="form-brand">
-      <div class="brand-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8">
-          <circle cx="12" cy="12" r="9"/>
-          <path d="M8 12c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4"/>
-          <circle cx="12" cy="12" r="1.5" fill="white" stroke="none"/>
-        </svg>
-      </div>
-      <div>
-        <h2>PGH Brain</h2>
-        <p>Intelligence artificielle d'entreprise</p>
-      </div>
-    </div>
-
-    <div class="form-tag form-tag-green">
-      Inscription gratuite
-    </div>
-
-    <h3 class="form-title">Créer votre compte</h3>
-    <p class="form-subtitle">Vous recevrez votre mot de passe par email.</p>
-
-    <div class="feedback feedback-error" *ngIf="error && !isLogin">
-      <span>{{ error }}</span>
-    </div>
-
-    <div class="feedback feedback-success" *ngIf="success">
-      <span>{{ success }}</span>
-    </div>
-
-    <div class="form-fields">
-
-      <div class="fields-row">
-        <div class="field">
-          <label>Nom</label>
-          <div class="input-group">
-            <input name="nom" type="text" [(ngModel)]="nom" placeholder="Nom" [disabled]="loading"/>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Prénom</label>
-          <div class="input-group">
-            <input name="prenom" type="text" [(ngModel)]="prenom" placeholder="Prénom" [disabled]="loading"/>
-          </div>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Numéro CIN</label>
-        <div class="input-group">
-          <input name="cin" type="text" [(ngModel)]="regCin" placeholder="Numéro CIN" [disabled]="loading"/>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Email</label>
-        <div class="input-group">
-          <input name="email" type="email" [(ngModel)]="email" placeholder="email@email.com" [disabled]="loading"/>
-        </div>
-      </div>
-
-    </div>
-
-    <label class="terms-check">
-      <input type="checkbox" [(ngModel)]="termsAccepted"/>
-      J'accepte les conditions
-    </label>
-
-    <button type="button" class="submit-btn" (click)="register()" [disabled]="loading">
-      <span *ngIf="!loading">Créer mon compte →</span>
-      <div *ngIf="loading" class="btn-loader">
-        <div></div><div></div><div></div>
-      </div>
-    </button>
-
-    <div class="switch-link">
-      Déjà un compte ?
-      <a (click)="switchToLogin()">Se connecter</a>
-    </div>
-
-  </div>
-</div>
-
-    <!-- ══════════════ OVERLAY (animated side) ══════════════ -->
-    <div class="overlay-container">
-      <div class="overlay">
-        <div class="overlay-panel">
-          <div class="overlay-logo-ring">
-            <div class="overlay-logo-inner">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-            </div>
-          </div>
-          <h3>Bienvenue</h3>
-          <p>Plateforme IA nouvelle génération</p>
-          <div class="overlay-divider"></div>
-          <div class="overlay-stats">
-            <div class="ostat"><span class="ostat-val">24/7</span><span class="ostat-lbl">Support</span></div>
-            <div class="ostat"><span class="ostat-val">IA</span><span class="ostat-lbl">Avancée</span></div>
-          </div>
-          <button class="overlay-btn" (click)="switchToRegister()" *ngIf="isLogin">Créer un compte</button>
-          <button class="overlay-btn" (click)="switchToLogin()" *ngIf="!isLogin">Se connecter</button>
-        </div>
-        <div class="overlay-panel">
-          <div class="overlay-logo-ring">
-            <div class="overlay-logo-inner">
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v8M8 12h8"/>
-              </svg>
-            </div>
-          </div>
-          <h3>Rejoignez-nous</h3>
-          <p>Accédez à l'intelligence collaborative</p>
-          <div class="overlay-divider"></div>
-          <div class="overlay-stats">
-            <div class="ostat"><span class="ostat-val">100%</span><span class="ostat-lbl">Sécurisé</span></div>
-            <div class="ostat"><span class="ostat-val">Fast</span><span class="ostat-lbl">Performance</span></div>
-          </div>
-          <button class="overlay-btn" (click)="switchToLogin()" *ngIf="!isLogin">Connexion</button>
-          <button class="overlay-btn" (click)="switchToRegister()" *ngIf="isLogin">Inscription</button>
-        </div>
       </div>
     </div>
 
   </div>
+
+  <!-- ══════════════ MODAL CHANGEMENT MDP ══════════════ -->
+  <div class="change-modal-overlay" *ngIf="showChangeModal">
+    <div class="change-modal-card">
+      <div class="change-modal-header">
+        <div class="change-modal-icon">🔐</div>
+        <h3>Changement de mot de passe requis</h3>
+        <p>Pour votre sécurité, définissez un nouveau mot de passe avant de continuer.</p>
+      </div>
+
+      <div class="change-modal-body">
+        <div class="feedback feedback-error" *ngIf="changeError">❌ {{ changeError }}</div>
+        <div class="feedback feedback-success" *ngIf="changeSuccess">{{ changeSuccess }}</div>
+
+        <div class="field">
+          <label>Mot de passe actuel</label>
+          <div class="input-group" [class.focused]="oldPwFocused">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input [type]="showOldPw ? 'text' : 'password'"
+                   [(ngModel)]="oldPassword"
+                   placeholder="Mot de passe reçu par email"
+                   [disabled]="changeLoading"
+                   (focus)="oldPwFocused=true"
+                   (blur)="oldPwFocused=false"/>
+            <button type="button" class="eye-btn" (click)="showOldPw=!showOldPw">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Nouveau mot de passe</label>
+          <div class="input-group" [class.focused]="newPwFocused">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <input [type]="showNewPw ? 'text' : 'password'"
+                   [(ngModel)]="newPassword"
+                   placeholder="Minimum 8 caractères"
+                   [disabled]="changeLoading"
+                   (focus)="newPwFocused=true"
+                   (blur)="newPwFocused=false"/>
+            <button type="button" class="eye-btn" (click)="showNewPw=!showNewPw">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+          <div class="strength-bar" *ngIf="newPassword.length > 0">
+            <div class="strength-track">
+              <div class="strength-fill"
+                   [style.width.%]="passwordStrength * 20"
+                   [style.background]="strengthColor"></div>
+            </div>
+            <span class="strength-label" [style.color]="strengthColor">
+              {{ strengthLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Confirmer le mot de passe</label>
+          <div class="input-group" [class.focused]="confirmPwFocused"
+               [class.input-match]="confirmPassword && newPassword === confirmPassword"
+               [class.input-mismatch]="confirmPassword && newPassword !== confirmPassword">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <input [type]="showConfirmPw ? 'text' : 'password'"
+                   [(ngModel)]="confirmPassword"
+                   placeholder="Répétez le mot de passe"
+                   [disabled]="changeLoading"
+                   (focus)="confirmPwFocused=true"
+                   (blur)="confirmPwFocused=false"
+                   (keyup.enter)="submitChangePassword()"/>
+            <button type="button" class="eye-btn" (click)="showConfirmPw=!showConfirmPw">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pw-rules">
+          <div class="pw-rule" [class.valid]="newPassword.length >= 8">
+            <span>{{ newPassword.length >= 8 ? '✅' : '○' }}</span>
+            Minimum 8 caractères
+          </div>
+          <div class="pw-rule" [class.valid]="/[A-Z]/.test(newPassword)">
+            <span>{{ /[A-Z]/.test(newPassword) ? '✅' : '○' }}</span>
+            Une majuscule
+          </div>
+          <div class="pw-rule" [class.valid]="/[0-9]/.test(newPassword)">
+            <span>{{ /[0-9]/.test(newPassword) ? '✅' : '○' }}</span>
+            Un chiffre
+          </div>
+        </div>
+      </div>
+
+      <div class="change-modal-footer">
+        <button class="submit-btn" (click)="submitChangePassword()"
+                [disabled]="changeLoading">
+          <span *ngIf="!changeLoading">🔒 Changer mon mot de passe</span>
+          <div *ngIf="changeLoading" class="btn-loader">
+            <div></div><div></div><div></div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ MODAL FORGOT PASSWORD ══════════════ -->
+  <div class="change-modal-overlay" *ngIf="showForgotModal"
+       (click)="closeForgotModal()">
+    <div class="change-modal-card forgot-card"
+         (click)="$event.stopPropagation()">
+
+      <div class="change-modal-header">
+        <div class="change-modal-icon">
+          {{ forgotStep === 1 ? '🔑' : forgotStep === 2 ? '📩' : '🛡️' }}
+        </div>
+        <h3>
+          {{ forgotStep === 1 ? 'Mot de passe oublié'
+           : forgotStep === 2 ? 'Vérification OTP'
+           : 'Nouveau mot de passe' }}
+        </h3>
+        <p>
+          {{ forgotStep === 1 ? 'Entrez votre CIN pour recevoir un code par email.'
+           : forgotStep === 2 ? 'Code envoyé à ' + forgotEmailHint
+           : 'Choisissez un nouveau mot de passe sécurisé.' }}
+        </p>
+        <div class="steps-indicator">
+          <div class="step-dot"
+               [class.active]="forgotStep >= 1"
+               [class.done]="forgotStep > 1">1</div>
+          <div class="step-line" [class.done]="forgotStep > 1"></div>
+          <div class="step-dot"
+               [class.active]="forgotStep >= 2"
+               [class.done]="forgotStep > 2">2</div>
+          <div class="step-line" [class.done]="forgotStep > 2"></div>
+          <div class="step-dot" [class.active]="forgotStep >= 3">3</div>
+        </div>
+      </div>
+
+      <div class="change-modal-body">
+        <div class="feedback feedback-error" *ngIf="forgotError">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ forgotError }}
+        </div>
+        <div class="feedback feedback-success" *ngIf="forgotSuccess">
+          {{ forgotSuccess }}
+        </div>
+
+        <!-- Étape 1 -->
+        <div *ngIf="forgotStep === 1">
+          <div class="field">
+            <label>Numéro CIN</label>
+            <div class="input-group">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <path d="M2 10h20"/>
+              </svg>
+              <input type="text" [(ngModel)]="forgotCin"
+                     placeholder="Entrez votre CIN"
+                     [disabled]="forgotLoading"
+                     (keyup.enter)="sendOtp()"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Étape 2 -->
+        <div *ngIf="forgotStep === 2">
+          <div class="field">
+            <label>Code OTP (6 chiffres)</label>
+            <div class="otp-input-row">
+              <input type="text" [(ngModel)]="otpCode"
+                     maxlength="6"
+                     placeholder="_ _ _ _ _ _"
+                     class="otp-input"
+                     [disabled]="forgotLoading"
+                     (keyup.enter)="verifyOtp()"/>
+            </div>
+          </div>
+          <div class="otp-timer" *ngIf="otpTimer > 0">
+            ⏱ Code valide encore : <strong>{{ otpTimerDisplay }}</strong>
+          </div>
+          <div class="otp-expired" *ngIf="otpTimer === 0">
+            ⚠️ Code expiré —
+            <a (click)="resendOtp()" class="resend-link">Renvoyer un code</a>
+          </div>
+          <div class="resend-hint" *ngIf="otpTimer > 0">
+            Pas reçu ?
+            <a (click)="resendOtp()" class="resend-link">Renvoyer</a>
+          </div>
+        </div>
+
+        <!-- Étape 3 -->
+        <div *ngIf="forgotStep === 3">
+          <div class="field" style="margin-bottom: 16px;">
+            <label>Nouveau mot de passe</label>
+            <div class="input-group">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <input [type]="showForgotNewPw ? 'text' : 'password'"
+                     [(ngModel)]="forgotNewPw"
+                     placeholder="Minimum 8 caractères"
+                     [disabled]="forgotLoading"/>
+              <button type="button" class="eye-btn"
+                      (click)="showForgotNewPw=!showForgotNewPw">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="strength-bar" *ngIf="forgotNewPw.length > 0">
+              <div class="strength-track">
+                <div class="strength-fill"
+                     [style.width.%]="passwordStrength * 20"
+                     [style.background]="strengthColor"></div>
+              </div>
+              <span class="strength-label" [style.color]="strengthColor">
+                {{ strengthLabel }}
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Confirmer le mot de passe</label>
+            <div class="input-group"
+                 [class.input-match]="forgotConfirmPw && forgotNewPw === forgotConfirmPw"
+                 [class.input-mismatch]="forgotConfirmPw && forgotNewPw !== forgotConfirmPw">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <input [type]="showForgotConfPw ? 'text' : 'password'"
+                     [(ngModel)]="forgotConfirmPw"
+                     placeholder="Répétez le mot de passe"
+                     [disabled]="forgotLoading"
+                     (keyup.enter)="resetPassword()"/>
+              <button type="button" class="eye-btn"
+                      (click)="showForgotConfPw=!showForgotConfPw">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="change-modal-footer forgot-footer">
+        <button class="btn-cancel-forgot" (click)="closeForgotModal()"
+                [disabled]="forgotLoading">Annuler</button>
+        <button class="submit-btn forgot-submit"
+                (click)="forgotStep===1 ? sendOtp()
+                       : forgotStep===2 ? verifyOtp()
+                       : resetPassword()"
+                [disabled]="forgotLoading">
+          <span *ngIf="!forgotLoading">
+            {{ forgotStep === 1 ? 'Envoyer le code →'
+             : forgotStep === 2 ? 'Vérifier →'
+             : 'Réinitialiser →' }}
+          </span>
+          <div *ngIf="forgotLoading" class="btn-loader">
+            <div></div><div></div><div></div>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
 </div>

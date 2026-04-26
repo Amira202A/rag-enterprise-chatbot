@@ -8,24 +8,28 @@ def generate_answer(prompt: str):
 
     try:
         response = requests.post(
-            f"{OLLAMA_URL}/api/generate",
-            json={
-                "model": LLM_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "num_predict": 800,
-                    "temperature": 0.15,
-                    "top_k": 10,
-                    "top_p": 0.6,
-                    "num_ctx": 1024,
-                    "num_thread": 4,
-                    "repeat_penalty": 1.3
-                },
-                 "stop": ["Q:", "Context:", "QUESTION:"]
-            },
-            timeout=90
-        )
+    f"{OLLAMA_URL}/api/generate",
+    json={
+        "model": LLM_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "num_predict": 150,    # ✅ très court
+            "temperature": 0.0,    # ✅ déterministe
+            "top_k": 3,
+            "top_p": 0.5,
+            "num_ctx": 400,        # ✅ très court
+            "num_thread": 4,
+            "repeat_penalty": 1.5
+        },
+        "stop": [
+            "Question:", "Contexte:", "Réponse:",
+            "REGLE", "SYSTEM", "USER", "\n\n\n",
+            "goul EXACTEMENT", "Ma tjawbch"
+        ]
+    },
+    timeout=120
+)
 
         response.raise_for_status()
         result = response.json()["response"].strip()
@@ -123,26 +127,50 @@ ANSWER:
 
 def clean_llm_output(text: str) -> str:
     if not text:
-        return "Je n’ai pas pu générer une réponse."
+        return "Je n'ai pas pu générer une réponse."
 
     cleaned = text.strip()
 
+    # Supprimer les préfixes parasites
     bad_prefixes = [
-        "answer:",
-        "response:",
-        "assistant:",
-        "bot:",
-        "réponse:",
-        "output:"
+        "answer:", "response:", "assistant:", "bot:",
+        "réponse:", "output:", "regle:", "règle:",
+        "system:", "context:", "contexte:"
     ]
 
     lowered = cleaned.lower()
     for prefix in bad_prefixes:
         if lowered.startswith(prefix):
             cleaned = cleaned[len(prefix):].strip()
+            lowered = cleaned.lower()
             break
 
-    lines = [line.strip() for line in cleaned.split("\n") if line.strip()]
+    # ✅ Supprimer tout ce qui ressemble à une répétition du prompt
+    stop_phrases = [
+        "goul EXACTEMENT",
+        "Ma tjawbch",
+        "INTERDICTION",
+        "ABSOLUTE RULES",
+        "SYSTEM INSTRUCTIONS",
+        "NEVER VIOLATE",
+        "your ONLY source",
+        "DO NOT invent",
+        "REGLE:",
+        "RÈGLE:",
+        "Departments:",
+        "USER QUESTION:"
+    ]
+
+    for phrase in stop_phrases:
+        if phrase in cleaned:
+            cleaned = cleaned[:cleaned.index(phrase)].strip()
+
+    # Nettoyer les lignes vides multiples
+    lines   = [line.strip() for line in cleaned.split("\n") if line.strip()]
     cleaned = " ".join(lines)
+
+    # Si après nettoyage c'est vide
+    if not cleaned:
+        return "Je ne trouve pas cette information dans les documents disponibles."
 
     return cleaned

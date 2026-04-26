@@ -5,12 +5,10 @@ import { adminGuard } from './admin/admin.guard';
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: AuthUnifiedComponent },
-  { path: 'register', component: AuthUnifiedComponent },
 
   {
     path: 'chat',
     loadComponent: () => import('./chat/chat.component').then(m => m.ChatComponent)
-    // 🔥 supprimé canActivate temporairement
   },
 
   {
